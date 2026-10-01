@@ -24,15 +24,18 @@ const imageCache = new Map();
 const TAU = Math.PI * 2;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
-export function loadAvatarImage(character, onLoad) {
+export function loadAvatarImage(character, onLoad, thumbnail = false) {
   if (typeof window === "undefined") return null;
   const id = typeof character === "string" ? character : character.id;
-  let image = imageCache.get(id);
+  const key = `${id}:${thumbnail ? "thumb" : "stage"}`;
+  let image = imageCache.get(key);
   if (!image) {
     image = new window.Image();
     image.decoding = "async";
-    image.src = `/avatars/${id}.png`;
-    imageCache.set(id, image);
+    const width = thumbnail ? 96 : 1080;
+    const quality = thumbnail ? 75 : 82;
+    image.src = `/_next/image?url=${encodeURIComponent(`/avatars/${id}.png`)}&w=${width}&q=${quality}`;
+    imageCache.set(key, image);
   }
   if (onLoad) {
     if (image.complete && image.naturalWidth) onLoad();
@@ -281,10 +284,14 @@ function drawFace(ctx, rig, art) {
   }
 }
 
-export function drawAvatar(ctx, width, height, rig, character) {
+export function drawAvatar(ctx, width, height, rig, character, thumbnail = false) {
   ctx.clearRect(0, 0, width, height);
   const art = ART[character?.id || "fox"];
-  const image = loadAvatarImage(character);
+  const requestedImage = loadAvatarImage(character, null, thumbnail);
+  const previewImage = thumbnail ? null : loadAvatarImage(character, null, true);
+  const image = requestedImage?.complete && requestedImage.naturalWidth
+    ? requestedImage
+    : previewImage?.complete && previewImage.naturalWidth ? previewImage : null;
   if (!art || !image?.complete || !image.naturalWidth) return;
 
   const scale = Math.min((width * 0.75) / image.naturalWidth, (height * 1.08) / image.naturalHeight);

@@ -33,8 +33,8 @@ function AvatarThumbnail({ character }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const context = canvas.getContext("2d");
-    const draw = () => drawAvatar(context, canvas.width, canvas.height, combineRig(IDLE_RIG, expressionOverlay(IDLE_EXPR)), character);
-    loadAvatarImage(character, draw);
+    const draw = () => drawAvatar(context, canvas.width, canvas.height, combineRig(IDLE_RIG, expressionOverlay(IDLE_EXPR)), character, true);
+    loadAvatarImage(character, draw, true);
     draw();
   }, [character]);
   return <canvas ref={canvasRef} width={88} height={88} className="h-11 w-11" aria-hidden="true" />;
@@ -171,7 +171,7 @@ export default function AvatarStudio() {
 
       const overlay = expressionOverlay(exprRef.current);
       const combined = combineRig({ ...rigRef.current, pitch: rigRef.current.pitch + breathe }, overlay);
-      drawAvatar(ctx, canvas.width, canvas.height, combined, characterRef.current, t);
+      drawAvatar(ctx, canvas.width, canvas.height, combined, characterRef.current);
     }
     rafRef.current = requestAnimationFrame(frame);
   }, []);
