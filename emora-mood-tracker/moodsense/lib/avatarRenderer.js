@@ -14,7 +14,7 @@ export const CHARACTERS = [
     cheek: "#F2A0A0",
     ear: "fox",
     eye: "almond",
-    brow: "angled",
+    brow: "expressive",
     mouth: "muzzle",
     muzzle: "#FBE3C4",
     nose: "#3A2418",
@@ -28,7 +28,7 @@ export const CHARACTERS = [
     cheek: "#F3A9B7",
     ear: "cat",
     eye: "slit",
-    brow: "thin",
+    brow: "expressive",
     mouth: "default",
     whiskers: true,
     nose: "#C4432B",
@@ -42,7 +42,7 @@ export const CHARACTERS = [
     cheek: "#E29999",
     ear: "bear",
     eye: "round",
-    brow: "round",
+    brow: "expressive",
     mouth: "muzzle",
     muzzle: "#E7C9A6",
     nose: "#2A1B12",
@@ -56,7 +56,7 @@ export const CHARACTERS = [
     cheek: "#F3ACC9",
     ear: "bunny",
     eye: "anime",
-    brow: "soft",
+    brow: "expressive",
     mouth: "teeth",
     nose: "#EFA8C4",
   },
@@ -82,9 +82,22 @@ export const CHARACTERS = [
     cheek: "#C6F0D9",
     ear: "alien",
     eye: "void",
-    brow: "ridge",
+    brow: "expressive",
     mouth: "slit",
     noWrinkle: true,
+  },
+  {
+    id: "anime",
+    label: "Anime",
+    emoji: "🌸",
+    skinA: "#FFE7D7",
+    skinB: "#F1BDAF",
+    cheek: "#F28CA1",
+    ear: "anime",
+    eye: "anime",
+    brow: "expressive",
+    mouth: "anime",
+    accent: "#8C64B8",
   },
 ];
 
@@ -122,8 +135,17 @@ function drawEars(ctx, headR, character, t) {
       ctx.quadraticCurveTo(-iw * 0.1, -ih, dir * iw * 0.08, -h * 0.92);
       ctx.quadraticCurveTo(iw * 0.1, -ih, iw / 2, -h * 0.1);
       ctx.closePath();
-      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.fillStyle = pointy ? "#F8D5CC" : "#F0A9AF";
       ctx.fill();
+      if (pointy) {
+        ctx.beginPath();
+        ctx.moveTo(-w * 0.30, -h * 0.55);
+        ctx.quadraticCurveTo(-w * 0.12, -h * 0.96, dir * w * 0.1, -h);
+        ctx.quadraticCurveTo(w * 0.16, -h * 0.72, w * 0.30, -h * 0.52);
+        ctx.quadraticCurveTo(0, -h * 0.68, -w * 0.30, -h * 0.55);
+        ctx.fillStyle = "#18223D";
+        ctx.fill();
+      }
       ctx.restore();
     });
   } else if (character.ear === "bear") {
@@ -208,6 +230,41 @@ function drawEars(ctx, headR, character, t) {
       ctx.fillStyle = character.skinB;
       ctx.fill();
     });
+  } else if (character.ear === "anime") {
+    [-1, 1].forEach((dir) => {
+      ctx.beginPath();
+      ctx.moveTo(dir * headR * 0.45, -headR * 0.92);
+      ctx.lineTo(dir * headR * 0.72, -headR * 1.53);
+      ctx.lineTo(dir * headR * 1.02, -headR * 0.86);
+      ctx.closePath();
+      ctx.fillStyle = "#FFF5EE";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(dir * headR * 0.63, -headR * 1.03);
+      ctx.lineTo(dir * headR * 0.72, -headR * 1.39);
+      ctx.lineTo(dir * headR * 0.88, -headR * 1.01);
+      ctx.closePath();
+      ctx.fillStyle = "#F6B4C9";
+      ctx.fill();
+    });
+    ctx.beginPath();
+    ctx.ellipse(0, -headR * 0.02, headR * 1.06, headR * 1.20, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#ECA4C0";
+    ctx.fill();
+    [-1, 1].forEach((dir) => {
+      ctx.beginPath();
+      ctx.moveTo(dir * headR * 0.73, -headR * 0.55);
+      ctx.quadraticCurveTo(dir * headR * 1.30, headR * 0.36, dir * headR * 1.16, headR * 1.80);
+      ctx.quadraticCurveTo(dir * headR * 0.55, headR * 1.58, dir * headR * 0.73, -headR * 0.55);
+      ctx.fillStyle = "#F5B6CE";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(dir * headR * 0.89, -headR * 0.2);
+      ctx.quadraticCurveTo(dir * headR * 1.12, headR * 0.60, dir * headR * 0.99, headR * 1.53);
+      ctx.strokeStyle = "#D88BAF";
+      ctx.lineWidth = headR * 0.035;
+      ctx.stroke();
+    });
   }
   ctx.restore();
 }
@@ -219,8 +276,10 @@ function drawEars(ctx, headR, character, t) {
 // ---------------------------------------------------------------------
 function drawEyebrows(ctx, headR, rig, character) {
   if (character.brow === "none") return;
+  if (character.brow === "expressive" &&
+      Math.abs(rig.browAngle) + Math.abs(rig.browRaise) + Math.abs(rig.browInnerRaise) < 0.22) return;
 
-  const baseY = -headR * (0.2 + rig.browRaise * 0.1);
+  const baseY = -headR * (0.43 + rig.browRaise * 0.1);
   const innerYOff = -rig.browInnerRaise * headR * 0.08;
   const outerYOff = rig.browAngle * headR * 0.09;
 
@@ -241,10 +300,9 @@ function drawEyebrows(ctx, headR, rig, character) {
   }
 
   const widthK = character.brow === "round" ? 0.14 : character.brow === "soft" ? 0.12 : 0.17;
-  const thickness =
-    character.brow === "angled" ? 0.055 : character.brow === "round" ? 0.05 : character.brow === "thin" ? 0.032 : 0.036;
+  const thickness = character.brow === "expressive" ? 0.025 : character.brow === "round" ? 0.045 : 0.033;
 
-  ctx.strokeStyle = "rgba(30,22,14,0.8)";
+  ctx.strokeStyle = character.id === "fox" ? "#8C3C27" : character.id === "cat" ? "#9B684D" : "rgba(55,35,35,0.72)";
   ctx.lineWidth = headR * thickness;
 
   [-1, 1].forEach((dir) => {
@@ -284,13 +342,13 @@ function drawEyes(ctx, headR, rig, character) {
     return;
   }
 
-  const baseRX = character.eye === "anime" ? 0.185 : character.eye === "round" ? 0.135 : character.eye === "void" ? 0.21 : 0.155;
-  const baseRY = character.eye === "anime" ? 0.225 : character.eye === "round" ? 0.145 : character.eye === "void" ? 0.26 : 0.185;
+  const baseRX = character.id === "anime" ? 0.215 : character.eye === "anime" ? 0.19 : character.eye === "round" ? 0.15 : character.eye === "void" ? 0.21 : character.eye === "slit" ? 0.18 : 0.175;
+  const baseRY = character.id === "anime" ? 0.25 : character.eye === "anime" ? 0.225 : character.eye === "round" ? 0.16 : character.eye === "void" ? 0.26 : character.eye === "slit" ? 0.21 : 0.20;
   const rx = headR * baseRX * rig.eyeScale;
   const ry = headR * baseRY * rig.eyeScale;
   const pupilR = headR * (character.eye === "anime" ? 0.085 : 0.07);
-  const lookX = clamp(rig.yaw, -1, 1) * (rx - pupilR) * 0.6;
-  const lookY = clamp(rig.pitch, -1, 1) * (ry - pupilR) * 0.45;
+  const lookX = clamp(rig.gazeX ?? rig.yaw, -1, 1) * Math.max(rx - pupilR, headR * 0.04) * 0.9;
+  const lookY = clamp(rig.gazeY ?? rig.pitch, -1, 1) * Math.max(ry - pupilR, headR * 0.04) * 0.75;
 
   [-1, 1].forEach((dir) => {
     const ex = dir * headR * (character.eye === "anime" ? 0.32 : 0.34);
@@ -311,6 +369,12 @@ function drawEyes(ctx, headR, rig, character) {
       ctx.closePath();
       ctx.fillStyle = "#0C0C10";
       ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(lookX * 0.7, lookY * 0.7, pupilR * 0.9, pupilR * 1.25, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#4CE5C1";
+      ctx.globalAlpha = 0.5;
+      ctx.fill();
+      ctx.globalAlpha = 1;
       ctx.beginPath();
       ctx.ellipse(lookX * 0.5 - rx * 0.25, lookY * 0.5 - ry * 0.35, pupilR * 0.4, pupilR * 0.55, 0, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.85)";
@@ -333,19 +397,31 @@ function drawEyes(ctx, headR, rig, character) {
     ctx.strokeStyle = "rgba(30,22,14,0.5)";
     ctx.stroke();
 
-    if (character.eye === "almond") {
-      // fox eyeliner flick
+    if (character.eye === "almond" || character.eye === "slit" || character.id === "anime") {
+      // Outer lashes follow each eye's own outer corner.
       ctx.beginPath();
-      ctx.moveTo(rx * 0.6, -ry * 0.3);
-      ctx.lineTo(rx * 1.25, -ry * 0.55);
-      ctx.lineWidth = headR * 0.028;
+      ctx.moveTo(dir * rx * 0.96, -ry * 0.10);
+      ctx.quadraticCurveTo(dir * rx * 1.12, -ry * 0.20, dir * rx * 1.22, -ry * 0.37);
+      ctx.lineWidth = headR * 0.016;
       ctx.strokeStyle = "rgba(20,14,10,0.75)";
       ctx.lineCap = "round";
+      ctx.stroke();
+    }
+    if (character.id === "anime") {
+      ctx.beginPath();
+      ctx.moveTo(-rx * 0.92, -ry * 0.25);
+      ctx.quadraticCurveTo(0, -ry * 1.28, rx * 0.92, -ry * 0.25);
+      ctx.strokeStyle = "#4A3853";
+      ctx.lineWidth = headR * 0.032;
       ctx.stroke();
     }
 
     if (character.eye === "slit") {
       // cat: tall vertical slit pupil instead of a round one
+      ctx.beginPath();
+      ctx.ellipse(lookX, lookY, pupilR * 1.12, pupilR * 1.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#59AFC6";
+      ctx.fill();
       ctx.beginPath();
       ctx.ellipse(lookX, lookY, pupilR * 0.34, pupilR * 1.15, 0, 0, Math.PI * 2);
       ctx.fillStyle = "#1B140E";
@@ -354,12 +430,18 @@ function drawEyes(ctx, headR, rig, character) {
       // bunny: big iris + pupil + double highlight
       ctx.beginPath();
       ctx.arc(lookX, lookY, pupilR * 1.15, 0, Math.PI * 2);
-      ctx.fillStyle = "#7A4A63";
+      ctx.fillStyle = character.id === "anime" ? "#4A96D1" : "#AD6698";
       ctx.fill();
       ctx.beginPath();
       ctx.arc(lookX, lookY, pupilR * 0.62, 0, Math.PI * 2);
-      ctx.fillStyle = "#241118";
+      ctx.fillStyle = character.id === "anime" ? "#202C5B" : "#241118";
       ctx.fill();
+      if (character.id === "anime") {
+        ctx.beginPath();
+        ctx.ellipse(lookX, lookY + pupilR * 0.57, pupilR * 0.65, pupilR * 0.29, 0, 0, Math.PI * 2);
+        ctx.fillStyle = "#A0E6F4";
+        ctx.fill();
+      }
       ctx.beginPath();
       ctx.arc(lookX - pupilR * 0.5, lookY - pupilR * 0.6, pupilR * 0.4, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.95)";
@@ -371,6 +453,10 @@ function drawEyes(ctx, headR, rig, character) {
       ctx.restore();
       return;
     } else {
+      ctx.beginPath();
+      ctx.arc(lookX, lookY, pupilR * 1.28, 0, Math.PI * 2);
+      ctx.fillStyle = character.id === "fox" ? "#EFCB54" : "#8B593D";
+      ctx.fill();
       ctx.beginPath();
       ctx.arc(lookX, lookY, pupilR, 0, Math.PI * 2);
       ctx.fillStyle = "#221812";
@@ -431,127 +517,143 @@ function drawVisorEyes(ctx, headR, rig, character) {
 // corner lift, roundness (surprise "O"), asymmetry (disgust sneer) and
 // tighten (anger).
 // ---------------------------------------------------------------------
-function mouthGeometry(headR, rig) {
-  const widen = 1 + rig.mouthWiden * 0.22 - rig.mouthTighten * 0.22;
-  const halfW = headR * (0.2 + Math.max(0, rig.cornerLift) * 0.05) * widen * (1 - rig.mouthRound * 0.35);
-  const cornerYOff = -rig.cornerLift * headR * 0.14;
-  const bowDir = rig.cornerLift >= 0 ? 1 : -1;
-  const bow = headR * (0.07 + Math.abs(rig.cornerLift) * 0.15) * (1 - rig.mouthRound * 0.6);
-  const openHalf = rig.mouthOpen * headR * (0.12 + rig.mouthRound * 0.1);
-  const baseY = headR * 0.4;
+function drawCharacterMouth(ctx, headR, rig, character) {
+  const r = headR;
+  const id = character.id;
+  const smile = clamp(rig.cornerLift || 0, -1, 1);
+  const open = clamp(rig.mouthOpen || 0, 0, 1);
+  const round = clamp(rig.mouthRound || 0, 0, 1);
+  const tongue = clamp(rig.tongueOut || 0, 0, 1);
+  const y = r * (id === "alien" ? 0.48 : id === "anime" ? 0.43 : 0.52);
 
-  const asymL = 1 - rig.mouthAsym * 0.45;
-  const asymR = 1 + rig.mouthAsym * 0.45;
-
-  const leftCornerY = baseY + cornerYOff * asymL;
-  const rightCornerY = baseY + cornerYOff * asymR;
-  const upperCtrlY = baseY + cornerYOff + bowDir * bow - openHalf * 0.5;
-  const lowerCtrlY = baseY + cornerYOff + bowDir * bow + openHalf * 1.25 + rig.mouthOpen * headR * 0.04;
-
-  return { halfW, leftCornerY, rightCornerY, upperCtrlY, lowerCtrlY, baseY, openHalf };
-}
-
-function drawGenericMouth(ctx, headR, rig, mouthColorOpen, mouthColorClosed) {
-  const g = mouthGeometry(headR, rig);
-  ctx.beginPath();
-  ctx.moveTo(-g.halfW, g.leftCornerY);
-  if (rig.mouthRound > 0.15) {
-    ctx.quadraticCurveTo(0, g.upperCtrlY - headR * rig.mouthRound * 0.08, g.halfW, g.rightCornerY);
-    ctx.quadraticCurveTo(g.halfW * 1.05, g.baseY + g.openHalf * 0.6, 0, g.lowerCtrlY + headR * rig.mouthRound * 0.05);
-    ctx.quadraticCurveTo(-g.halfW * 1.05, g.baseY + g.openHalf * 0.6, -g.halfW, g.leftCornerY);
-  } else {
-    ctx.quadraticCurveTo(0, g.upperCtrlY, g.halfW, g.rightCornerY);
-    ctx.quadraticCurveTo(0, g.lowerCtrlY, -g.halfW, g.leftCornerY);
-  }
-  ctx.closePath();
-  ctx.fillStyle = rig.mouthOpen > 0.16 ? mouthColorOpen : mouthColorClosed;
-  ctx.fill();
-  return g;
-}
-
-function drawMouth(ctx, headR, rig, character) {
-  if (character.mouth === "speaker") {
-    const accent = character.accent || "#E9A544";
-    const bars = 5;
-    const spread = headR * 0.34;
-    ctx.save();
-    ctx.translate(0, headR * 0.42);
-    ctx.rotate(rig.cornerLift * 0.12);
-    for (let i = 0; i < bars; i++) {
-      const t = i / (bars - 1) - 0.5;
-      const x = t * spread * 2;
-      const lift = (1 - Math.abs(t) * 1.4) * rig.cornerLift;
-      const barH = Math.max(headR * 0.02, headR * (0.03 + rig.mouthOpen * 0.16) * (1 - Math.abs(t) * 0.5));
+  if (id === "fox" || id === "cat" || id === "bear") {
+    // The muzzle is two overlapping cheeks, rather than a single flat oval.
+    const cream = id === "fox" ? "#FFF1DE" : id === "cat" ? "#FFF8F0" : "#F6DCC0";
+    [-1, 1].forEach((dir) => {
       ctx.beginPath();
-      const w = headR * 0.05;
-      const y = -lift * headR * 0.08;
-      ctx.roundRect
-        ? ctx.roundRect(x - w / 2, y - barH / 2, w, barH, w / 2)
-        : ctx.rect(x - w / 2, y - barH / 2, w, barH);
-      ctx.fillStyle = accent;
-      ctx.globalAlpha = 0.85;
+      ctx.ellipse(dir * r * 0.14, r * 0.35, r * (id === "bear" ? 0.31 : 0.29), r * 0.25, dir * -0.16, 0, Math.PI * 2);
+      ctx.fillStyle = cream;
       ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-    ctx.restore();
-    return;
-  }
-
-  if (character.mouth === "slit") {
-    const g = mouthGeometry(headR, { ...rig, mouthOpen: rig.mouthOpen * 0.4, cornerLift: rig.cornerLift * 0.6 });
-    ctx.beginPath();
-    ctx.moveTo(-g.halfW * 0.7, g.leftCornerY);
-    ctx.quadraticCurveTo(0, g.upperCtrlY, g.halfW * 0.7, g.rightCornerY);
-    ctx.quadraticCurveTo(0, g.lowerCtrlY, -g.halfW * 0.7, g.leftCornerY);
-    ctx.closePath();
-    ctx.fillStyle = "rgba(20,30,24,0.55)";
-    ctx.fill();
-    return;
-  }
-
-  if (character.mouth === "muzzle") {
-    const muzzleW = headR * 0.62;
-    const muzzleH = headR * 0.44;
-    const muzzleY = headR * 0.32;
-    ctx.beginPath();
-    ctx.ellipse(0, muzzleY, muzzleW / 2, muzzleH / 2, 0, 0, Math.PI * 2);
-    ctx.fillStyle = character.muzzle;
-    ctx.fill();
-
-    // nose
-    ctx.beginPath();
-    ctx.moveTo(-headR * 0.055, muzzleY - muzzleH * 0.22);
-    ctx.lineTo(headR * 0.055, muzzleY - muzzleH * 0.22);
-    ctx.lineTo(0, muzzleY - muzzleH * 0.02);
-    ctx.closePath();
-    ctx.fillStyle = character.nose;
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(0, headR * 0.06);
-    drawGenericMouth(ctx, headR, rig, "rgba(94,28,28,0.88)", "rgba(35,22,16,0.55)");
-    ctx.restore();
-    return;
-  }
-
-  if (character.mouth === "teeth") {
-    const g = drawGenericMouth(ctx, headR, rig, "rgba(120,40,40,0.85)", "rgba(35,22,16,0.72)");
-    if (rig.mouthOpen > 0.28) {
-      const toothW = headR * 0.07;
-      const toothH = headR * 0.09;
+    });
+    if (id === "fox") {
       [-1, 1].forEach((dir) => {
         ctx.beginPath();
-        const x = dir * toothW * 0.65;
-        ctx.rect(x - toothW / 2, g.upperCtrlY + headR * 0.02, toothW, toothH);
-        ctx.fillStyle = "#FFFBF3";
+        ctx.moveTo(dir * r * 0.2, r * 0.27);
+        ctx.lineTo(dir * r * 0.57, r * 0.21);
+        ctx.lineTo(dir * r * 0.42, r * 0.47);
+        ctx.closePath();
+        ctx.fillStyle = cream;
         ctx.fill();
       });
     }
-    return;
   }
 
-  // default (cat)
-  drawGenericMouth(ctx, headR, rig, "rgba(94,28,28,0.88)", "rgba(35,22,16,0.72)");
+  if (id === "robot") {
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.39, y - r * 0.19, r * 0.78, r * 0.46, r * 0.12);
+    ctx.fillStyle = "#23334E";
+    ctx.fill();
+    ctx.strokeStyle = "#8399AF";
+    ctx.lineWidth = r * 0.025;
+    ctx.stroke();
+  }
+
+  if (id === "fox" || id === "cat" || id === "bear" || id === "bunny") {
+    ctx.beginPath();
+    if (id === "bear") {
+      ctx.ellipse(0, r * 0.29, r * 0.105, r * 0.075, 0, 0, Math.PI * 2);
+    } else {
+      ctx.moveTo(-r * 0.085, r * 0.28);
+      ctx.quadraticCurveTo(0, r * 0.23, r * 0.085, r * 0.28);
+      ctx.quadraticCurveTo(0, r * 0.41, -r * 0.085, r * 0.28);
+    }
+    ctx.fillStyle = id === "bunny" ? "#EFA4AF" : id === "cat" ? "#D9818A" : "#3C2630";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.36);
+    ctx.lineTo(0, r * 0.43);
+    ctx.strokeStyle = id === "robot" ? "#fff" : "#704847";
+    ctx.lineWidth = r * 0.024;
+    ctx.stroke();
+  }
+
+  ctx.save();
+  if (id === "robot") ctx.strokeStyle = "#71F5E1";
+  else if (id === "alien") ctx.strokeStyle = "#125B53";
+  else ctx.strokeStyle = "#713A42";
+  ctx.lineWidth = r * (id === "robot" ? 0.052 : 0.044);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  if (round > 0.48) {
+    const radiusX = r * (0.075 + open * 0.03);
+    const radiusY = r * (0.065 + Math.max(open, round * 0.48) * 0.17);
+    ctx.beginPath();
+    ctx.ellipse(0, y + r * 0.11, radiusX, radiusY, 0, 0, Math.PI * 2);
+    ctx.fillStyle = id === "robot" ? "#112A3D" : "#632F48";
+    ctx.fill();
+    ctx.stroke();
+    if (tongue > 0.2 && id !== "robot") {
+      ctx.beginPath();
+      ctx.ellipse(0, y + r * 0.15 + tongue * r * 0.11, radiusX * 0.9, r * 0.07 + tongue * r * 0.04, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#F2859B";
+      ctx.fill();
+    }
+  } else if (id === "cat" && open < 0.12 && smile < 0.35) {
+    const w = r * 0.2;
+    ctx.beginPath();
+    ctx.moveTo(-w, y - smile * r * 0.11);
+    ctx.quadraticCurveTo(-w * 0.55, y + r * 0.12, 0, y + r * 0.015);
+    ctx.quadraticCurveTo(w * 0.55, y + r * 0.12, w, y - smile * r * 0.11);
+    ctx.stroke();
+  } else {
+    const halfW = r * (id === "anime" ? 0.145 : id === "bear" ? 0.20 : id === "robot" ? 0.20 : 0.22) * (1 + Math.max(smile, 0) * 0.2 + (rig.mouthWiden || 0) * 0.13);
+    const cornerY = y - smile * r * 0.13;
+    const centerY = y + smile * r * 0.13;
+    const gap = Math.max(r * 0.025, open * r * (id === "anime" ? 0.19 : 0.28) + Math.max(smile, 0) * r * (id === "anime" ? 0.035 : 0.07));
+    const asym = clamp(rig.mouthAsym || 0, -1, 1) * r * 0.075;
+    ctx.beginPath();
+    ctx.moveTo(-halfW, cornerY + asym);
+    ctx.quadraticCurveTo(0, centerY - gap * 0.22, halfW, cornerY - asym);
+    ctx.quadraticCurveTo(halfW * 0.88, centerY + gap * 0.75, 0, centerY + gap);
+    ctx.quadraticCurveTo(-halfW * 0.88, centerY + gap * 0.75, -halfW, cornerY + asym);
+    ctx.closePath();
+    ctx.fillStyle = id === "robot" ? "#10263B" : id === "alien" ? "#27645A" : id === "anime" ? "#9A536A" : "#713442";
+    ctx.fill();
+    ctx.stroke();
+    if (smile > 0.32 && open > 0.11 && id !== "alien" && id !== "robot") {
+      ctx.beginPath();
+      ctx.ellipse(0, centerY + gap * 0.30, halfW * 0.6, Math.max(r * 0.018, gap * 0.19), 0, 0, Math.PI);
+      ctx.fillStyle = "#FFF8EC";
+      ctx.fill();
+    }
+    if (tongue > 0.2 && id !== "robot") {
+      ctx.beginPath();
+      ctx.ellipse(0, centerY + gap * 0.83 + tongue * r * 0.09, halfW * 0.44, r * 0.075 + tongue * r * 0.045, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#F2859B";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(0, centerY + gap * 0.9);
+      ctx.lineTo(0, centerY + gap * 0.9 + tongue * r * 0.09);
+      ctx.strokeStyle = "#CF5D77";
+      ctx.lineWidth = r * 0.016;
+      ctx.stroke();
+    }
+  }
+
+  if (id === "bunny" && open > 0.12) {
+    [-1, 1].forEach((dir) => {
+      ctx.beginPath();
+      ctx.roundRect(dir * r * 0.058 - r * 0.045, y + r * 0.035, r * 0.09, r * 0.09, r * 0.018);
+      ctx.fillStyle = "#FFFDF6";
+      ctx.fill();
+    });
+  }
+  ctx.restore();
+}
+
+function drawMouth(ctx, headR, rig, character) {
+  drawCharacterMouth(ctx, headR, rig, character);
 }
 
 function drawWhiskers(ctx, headR, rig) {
@@ -583,11 +685,319 @@ function drawNoseWrinkle(ctx, headR, rig, character) {
   });
 }
 
+function drawBody(ctx, r, character) {
+  const id = character.id;
+  const color = {
+    fox: "#21334D", cat: "#F7EFE8", bear: "#BA6D65", bunny: "#D981A9",
+    robot: "#889DB8", alien: "#806FC0", anime: "#25283D",
+  }[id];
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.58, r * 0.88);
+  ctx.bezierCurveTo(-r * 1.0, r * 0.93, -r * 1.2, r * 1.46, -r * 1.12, r * 1.78);
+  ctx.lineTo(r * 1.12, r * 1.78);
+  ctx.bezierCurveTo(r * 1.2, r * 1.46, r * 1.0, r * 0.93, r * 0.58, r * 0.88);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = "rgba(35,28,39,0.36)";
+  ctx.lineWidth = r * 0.03;
+  ctx.stroke();
+  if (id === "fox") {
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.35, r * 0.94);
+    ctx.lineTo(0, r * 1.38);
+    ctx.lineTo(r * 0.35, r * 0.94);
+    ctx.fillStyle = "#F7D9AE";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, r * 1.39, r * 0.085, 0, Math.PI * 2);
+    ctx.fillStyle = "#EAA85B";
+    ctx.fill();
+    [-1, 1].forEach((dir) => {
+      ctx.beginPath();
+      ctx.moveTo(dir * r * 0.38, r * 0.96);
+      ctx.lineTo(dir * r * 0.17, r * 1.24);
+      ctx.lineTo(dir * r * 0.36, r * 1.43);
+      ctx.strokeStyle = "#738AA8";
+      ctx.lineWidth = r * 0.04;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(dir * r * 0.72, r * 1.04);
+      ctx.quadraticCurveTo(dir * r * 0.85, r * 1.24, dir * r * 0.88, r * 1.52);
+      ctx.strokeStyle = "#15243C";
+      ctx.lineWidth = r * 0.035;
+      ctx.stroke();
+    });
+  } else if (id === "cat") {
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.52, r * 1.03);
+    ctx.quadraticCurveTo(0, r * 1.61, r * 0.52, r * 1.03);
+    ctx.fillStyle = "#FFF9EF";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, r * 1.23, r * 0.09, 0, Math.PI * 2);
+    ctx.fillStyle = "#4DA3B3";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.18, r * 1.25);
+    ctx.lineTo(0, r * 1.38);
+    ctx.lineTo(r * 0.18, r * 1.25);
+    ctx.strokeStyle = "#4DA3B3";
+    ctx.lineWidth = r * 0.04;
+    ctx.stroke();
+  } else if (id === "bear") {
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.35, r * 0.96);
+    ctx.lineTo(0, r * 1.24);
+    ctx.lineTo(r * 0.35, r * 0.96);
+    ctx.fillStyle = "#F8E5D0";
+    ctx.fill();
+    [1.28, 1.52].forEach((y) => {
+      ctx.beginPath();
+      ctx.arc(0, r * y, r * 0.04, 0, Math.PI * 2);
+      ctx.fillStyle = "#784B42";
+      ctx.fill();
+    });
+  } else if (id === "bunny") {
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.38, r * 1.12, r * 0.76, r * 0.60, r * 0.12);
+    ctx.fillStyle = "#FFF5F0";
+    ctx.fill();
+    [-1, 1].forEach((dir) => {
+      ctx.beginPath();
+      ctx.moveTo(dir * r * 0.32, r * 0.96);
+      ctx.lineTo(dir * r * 0.32, r * 1.42);
+      ctx.strokeStyle = "#FFF5F0";
+      ctx.lineWidth = r * 0.08;
+      ctx.stroke();
+    });
+    ctx.beginPath();
+    ctx.arc(0, r * 1.3, r * 0.085, 0, Math.PI * 2);
+    ctx.fillStyle = "#E9A5C2";
+    ctx.fill();
+  } else if (id === "robot") {
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.34, r * 1.11, r * 0.68, r * 0.36, r * 0.09);
+    ctx.fillStyle = "#25354D";
+    ctx.fill();
+    [-1, 0, 1].forEach((i) => {
+      ctx.beginPath();
+      ctx.arc(i * r * 0.19, r * 1.29, r * 0.055, 0, Math.PI * 2);
+      ctx.fillStyle = i === 0 ? "#F4B85B" : "#6DE8D5";
+      ctx.fill();
+    });
+  } else if (id === "alien") {
+    ctx.beginPath();
+    ctx.ellipse(0, r * 1.05, r * 0.45, r * 0.2, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#E7E1FF";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, r * 1.35, r * 0.11, 0, Math.PI * 2);
+    ctx.fillStyle = "#75F5D1";
+    ctx.fill();
+  } else if (id === "anime") {
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.64, r * 0.97);
+    ctx.quadraticCurveTo(-r * 0.43, r * 1.44, 0, r * 1.53);
+    ctx.quadraticCurveTo(r * 0.43, r * 1.44, r * 0.64, r * 0.97);
+    ctx.lineTo(r * 0.30, r * 0.97);
+    ctx.lineTo(0, r * 1.26);
+    ctx.lineTo(-r * 0.30, r * 0.97);
+    ctx.closePath();
+    ctx.fillStyle = "#FFF7F8";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.22, r * 1.12);
+    ctx.lineTo(0, r * 1.29);
+    ctx.lineTo(r * 0.22, r * 1.12);
+    ctx.quadraticCurveTo(0, r * 1.48, -r * 0.22, r * 1.12);
+    ctx.fillStyle = "#D992B6";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, r * 1.24, r * 0.06, 0, Math.PI * 2);
+    ctx.fillStyle = "#F3D7A2";
+    ctx.fill();
+    [-1, 1].forEach((dir) => {
+      ctx.beginPath();
+      ctx.moveTo(dir * r * 0.36, r * 1.04);
+      ctx.quadraticCurveTo(dir * r * 0.64, r * 1.34, dir * r * 0.52, r * 1.66);
+      ctx.strokeStyle = "#FFF7F8";
+      ctx.lineWidth = r * 0.06;
+      ctx.stroke();
+    });
+  }
+}
+
+function drawHeadShape(ctx, r, character) {
+  const id = character.id;
+  const grad = ctx.createLinearGradient(-r * 0.45, -r, r * 0.6, r);
+  grad.addColorStop(0, character.skinA);
+  grad.addColorStop(1, character.skinB);
+  ctx.beginPath();
+  if (id === "fox") {
+    ctx.moveTo(0, -r * 1.03);
+    ctx.bezierCurveTo(r * 0.53, -r * 1.05, r * 0.94, -r * 0.66, r * 0.95, -r * 0.10);
+    ctx.lineTo(r * 1.14, r * 0.23);
+    ctx.lineTo(r * 0.87, r * 0.28);
+    ctx.lineTo(r * 1.00, r * 0.39);
+    ctx.bezierCurveTo(r * 0.73, r * 0.73, r * 0.35, r * 0.84, 0, r * 0.82);
+    ctx.bezierCurveTo(-r * 0.35, r * 0.84, -r * 0.73, r * 0.73, -r * 1.00, r * 0.39);
+    ctx.lineTo(-r * 0.87, r * 0.28);
+    ctx.lineTo(-r * 1.14, r * 0.23);
+    ctx.lineTo(-r * 0.95, -r * 0.10);
+    ctx.bezierCurveTo(-r * 0.94, -r * 0.66, -r * 0.53, -r * 1.05, 0, -r * 1.03);
+  } else if (id === "cat") {
+    ctx.moveTo(0, -r * 0.98);
+    ctx.bezierCurveTo(r * 0.66, -r * 1.02, r * 1.02, -r * 0.52, r * 0.94, r * 0.12);
+    ctx.lineTo(r * 1.06, r * 0.34);
+    ctx.lineTo(r * 0.91, r * 0.39);
+    ctx.bezierCurveTo(r * 0.82, r * 0.70, r * 0.39, r * 0.83, 0, r * 0.81);
+    ctx.bezierCurveTo(-r * 0.39, r * 0.83, -r * 0.82, r * 0.70, -r * 0.91, r * 0.39);
+    ctx.lineTo(-r * 1.06, r * 0.34);
+    ctx.lineTo(-r * 0.94, r * 0.12);
+    ctx.bezierCurveTo(-r * 1.02, -r * 0.52, -r * 0.66, -r * 1.02, 0, -r * 0.98);
+  } else if (id === "robot") {
+    ctx.roundRect(-r * 0.94, -r * 0.93, r * 1.88, r * 1.76, r * 0.33);
+  } else if (id === "alien") {
+    ctx.moveTo(0, -r * 1.06);
+    ctx.bezierCurveTo(r * 0.86, -r * 1.12, r * 1.20, -r * 0.52, r * 0.91, r * 0.21);
+    ctx.bezierCurveTo(r * 0.70, r * 0.69, r * 0.35, r * 0.86, 0, r * 0.89);
+    ctx.bezierCurveTo(-r * 0.35, r * 0.86, -r * 0.70, r * 0.69, -r * 0.91, r * 0.21);
+    ctx.bezierCurveTo(-r * 1.20, -r * 0.52, -r * 0.86, -r * 1.12, 0, -r * 1.06);
+  } else if (id === "anime") {
+    ctx.moveTo(0, -r * 0.98);
+    ctx.bezierCurveTo(r * 0.74, -r * 1.03, r * 0.93, -r * 0.36, r * 0.84, r * 0.34);
+    ctx.bezierCurveTo(r * 0.70, r * 0.65, r * 0.25, r * 0.82, 0, r * 0.84);
+    ctx.bezierCurveTo(-r * 0.25, r * 0.82, -r * 0.70, r * 0.65, -r * 0.84, r * 0.34);
+    ctx.bezierCurveTo(-r * 0.93, -r * 0.36, -r * 0.74, -r * 1.03, 0, -r * 0.98);
+  } else {
+    ctx.ellipse(0, -r * 0.09, id === "bear" ? r * 0.96 : r * 0.87, r * 0.89, 0, 0, Math.PI * 2);
+  }
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = id === "robot" ? "#63758E" : "rgba(90,51,43,0.46)";
+  ctx.lineWidth = r * 0.027;
+  ctx.stroke();
+}
+
+function drawHeadDetails(ctx, r, character) {
+  const id = character.id;
+  if (id === "fox") {
+    [-1, 1].forEach((dir) => {
+      ctx.beginPath();
+      ctx.moveTo(dir * r * 0.87, r * 0.12);
+      ctx.lineTo(dir * r * 0.48, r * 0.24);
+      ctx.lineTo(dir * r * 0.76, r * 0.30);
+      ctx.lineTo(dir * r * 0.48, r * 0.42);
+      ctx.lineTo(dir * r * 0.78, r * 0.51);
+      ctx.quadraticCurveTo(dir * r * 0.35, r * 0.77, dir * r * 0.20, r * 0.44);
+      ctx.fillStyle = "#FFF0E8";
+      ctx.fill();
+    });
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.92);
+    ctx.quadraticCurveTo(r * 0.10, -r * 0.48, 0, -r * 0.22);
+    ctx.quadraticCurveTo(-r * 0.10, -r * 0.48, 0, -r * 0.92);
+    ctx.fillStyle = "#D7653C";
+    ctx.fill();
+  } else if (id === "cat") {
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.85);
+    ctx.bezierCurveTo(r * 0.24, -r * 0.46, r * 0.16, r * 0.12, 0, r * 0.48);
+    ctx.bezierCurveTo(-r * 0.16, r * 0.12, -r * 0.24, -r * 0.46, 0, -r * 0.85);
+    ctx.fillStyle = "#FFF9F0";
+    ctx.fill();
+    [-1, 1].forEach((dir) => {
+      ctx.beginPath();
+      ctx.moveTo(dir * r * 0.29, -r * 0.82);
+      ctx.quadraticCurveTo(dir * r * 0.42, -r * 0.59, dir * r * 0.33, -r * 0.48);
+      ctx.quadraticCurveTo(dir * r * 0.38, -r * 0.72, dir * r * 0.29, -r * 0.82);
+      ctx.fillStyle = "#D88755";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(dir * r * 0.67, r * 0.28, r * 0.20, r * 0.31, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#FFF6ED";
+      ctx.fill();
+    });
+  } else if (id === "bear") {
+    ctx.beginPath();
+    ctx.ellipse(0, -r * 0.61, r * 0.42, r * 0.18, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,221,185,0.17)";
+    ctx.fill();
+  } else if (id === "robot") {
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.79, -r * 0.68, r * 1.58, r * 1.20, r * 0.20);
+    ctx.fillStyle = "#25384F";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.70, -r * 0.58, r * 1.40, r * 1.02, r * 0.16);
+    ctx.fillStyle = "#344C65";
+    ctx.fill();
+    [-1, 1].forEach((dir) => {
+      ctx.beginPath();
+      ctx.arc(dir * r * 0.72, r * 0.70, r * 0.055, 0, Math.PI * 2);
+      ctx.fillStyle = "#F2B660";
+      ctx.fill();
+    });
+  } else if (id === "alien") {
+    [-1, 0, 1].forEach((i) => {
+      ctx.beginPath();
+      ctx.arc(i * r * 0.18, -r * 0.65 - (i === 0 ? r * 0.07 : 0), r * 0.055, 0, Math.PI * 2);
+      ctx.fillStyle = "#D9FFE3";
+      ctx.fill();
+    });
+  } else if (id === "anime") {
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.92, -r * 0.20);
+    ctx.bezierCurveTo(-r * 1.10, -r * 0.92, -r * 0.42, -r * 1.24, 0, -r * 1.13);
+    ctx.bezierCurveTo(r * 0.58, -r * 1.25, r * 1.14, -r * 0.82, r * 0.93, -r * 0.20);
+    ctx.lineTo(r * 0.72, -r * 0.56);
+    ctx.quadraticCurveTo(r * 0.54, -r * 0.36, r * 0.34, -r * 0.38);
+    ctx.lineTo(r * 0.22, -r * 0.31);
+    ctx.quadraticCurveTo(r * 0.07, -r * 0.52, -r * 0.02, -r * 0.43);
+    ctx.lineTo(-r * 0.27, -r * 0.27);
+    ctx.quadraticCurveTo(-r * 0.45, -r * 0.33, -r * 0.54, -r * 0.54);
+    ctx.closePath();
+    ctx.fillStyle = "#F6BDD0";
+    ctx.fill();
+    [-0.48, -0.19, 0.13, 0.45].forEach((x, index) => {
+      ctx.beginPath();
+      ctx.moveTo(x * r, -r * 0.99);
+      ctx.quadraticCurveTo((x + (index % 2 ? 0.08 : -0.05)) * r, -r * 0.65, (x - 0.04) * r, -r * 0.38);
+      ctx.strokeStyle = "#E59EBC";
+      ctx.lineWidth = r * 0.028;
+      ctx.stroke();
+    });
+    // Dark maid headband with a scalloped ivory trim.
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.66, -r * 0.91);
+    ctx.quadraticCurveTo(0, -r * 1.28, r * 0.66, -r * 0.91);
+    ctx.strokeStyle = "#303248";
+    ctx.lineWidth = r * 0.12;
+    ctx.stroke();
+    [-3, -2, -1, 0, 1, 2, 3].forEach((i) => {
+      ctx.beginPath();
+      ctx.arc(i * r * 0.16, -r * (1.12 - Math.abs(i) * 0.035), r * 0.06, 0, Math.PI * 2);
+      ctx.fillStyle = "#FFF7F4";
+      ctx.fill();
+    });
+    ctx.beginPath();
+    ctx.arc(r * 0.77, -r * 0.77, r * 0.10, 0, Math.PI * 2);
+    ctx.fillStyle = "#2F3047";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(r * 0.77, -r * 0.77, r * 0.043, 0, Math.PI * 2);
+    ctx.fillStyle = "#E9C486";
+    ctx.fill();
+  }
+}
+
 export function drawAvatar(ctx, width, height, rig, character, time = 0) {
   ctx.clearRect(0, 0, width, height);
   const cx = width / 2;
-  const cy = height * 0.56;
-  const headR = Math.min(width, height) * 0.32;
+  const cy = height * 0.47;
+  const headR = Math.min(width * 0.32, height * 0.25);
 
   const roll = clamp(rig.roll || 0, -0.5, 0.5);
   const yaw = clamp(rig.yaw || 0, -1, 1);
@@ -596,24 +1006,19 @@ export function drawAvatar(ctx, width, height, rig, character, time = 0) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(roll);
-  ctx.scale(1 - Math.abs(yaw) * 0.1, 1 - Math.abs(pitch) * 0.06);
-  ctx.translate(yaw * headR * 0.16, pitch * headR * 0.1 + Math.sin(time / 1400) * headR * 0.015);
+  drawBody(ctx, headR, character);
+  ctx.scale(1 - Math.abs(yaw) * 0.09, 1 - Math.abs(pitch) * 0.04);
+  ctx.translate(yaw * headR * 0.14, pitch * headR * 0.09 + Math.sin(time / 1400) * headR * 0.012);
 
   drawEars(ctx, headR, character, time);
-
-  const grad = ctx.createRadialGradient(-headR * 0.3, -headR * 0.35, headR * 0.1, 0, 0, headR * 1.05);
-  grad.addColorStop(0, character.skinA);
-  grad.addColorStop(1, character.skinB);
-  ctx.beginPath();
-  ctx.arc(0, 0, headR, 0, Math.PI * 2);
-  ctx.fillStyle = grad;
-  ctx.fill();
+  drawHeadShape(ctx, headR, character);
+  drawHeadDetails(ctx, headR, character);
 
   if (character.cheek) {
-    const cheekOpacity = 0.3 + clamp(rig.cheekPuff, 0, 1) * 0.35;
+    const cheekOpacity = (character.id === "anime" ? 0.22 : 0.3) + clamp(rig.cheekPuff, 0, 1) * 0.32;
     [-1, 1].forEach((dir) => {
       ctx.beginPath();
-      ctx.ellipse(dir * headR * 0.56, headR * 0.22, headR * 0.16, headR * 0.1, 0, 0, Math.PI * 2);
+      ctx.ellipse(dir * headR * 0.56, headR * 0.22, headR * (character.id === "anime" ? 0.12 : 0.16), headR * (character.id === "anime" ? 0.065 : 0.1), 0, 0, Math.PI * 2);
       ctx.fillStyle = character.cheek;
       ctx.globalAlpha = cheekOpacity;
       ctx.fill();
@@ -622,10 +1027,13 @@ export function drawAvatar(ctx, width, height, rig, character, time = 0) {
   }
 
   drawNoseWrinkle(ctx, headR, rig, character);
+  ctx.save();
+  ctx.translate(yaw * headR * 0.075, pitch * headR * 0.035);
   drawEyebrows(ctx, headR, rig, character);
   drawEyes(ctx, headR, rig, character);
   if (character.whiskers) drawWhiskers(ctx, headR, rig);
   drawMouth(ctx, headR, rig, character);
+  ctx.restore();
 
   ctx.restore();
 }

@@ -62,7 +62,7 @@ export function extractRig(landmarks, box) {
   const innerTop = midpoint(pts[62], pts[61] ?? pts[62]);
   const innerBottom = midpoint(pts[66], pts[67] ?? pts[66]);
   const mouthGap = dist(innerTop, innerBottom);
-  const mouthOpen = clamp((mouthGap / eyeSpan - 0.02) / 0.55, 0, 1);
+  const mouthOpen = clamp((mouthGap / eyeSpan - 0.015) / 0.34, 0, 1);
 
   const mouthWidth = dist(pts[48], pts[54]);
   const smile = clamp((mouthWidth / eyeSpan - 0.95) / 0.35, -1, 1);
@@ -99,6 +99,9 @@ export function extractRig(landmarks, box) {
     roll,
     yaw,
     pitch,
+    gazeX: yaw * 0.45,
+    gazeY: pitch * 0.3,
+    tongueOut: 0,
     faceCenter: box ? { x: box.x + box.width / 2, y: box.y + box.height / 2 } : null,
     faceSize: box ? Math.max(box.width, box.height) : null,
   };
@@ -114,6 +117,9 @@ export const IDLE_RIG = {
   roll: 0,
   yaw: 0,
   pitch: 0,
+  gazeX: 0,
+  gazeY: 0,
+  tongueOut: 0,
   faceCenter: null,
   faceSize: null,
 };
@@ -124,7 +130,10 @@ export function smoothRig(current, target, factor) {
     if (key === "faceCenter" || key === "faceSize") continue;
     const c = current[key] ?? 0;
     const t = target[key] ?? 0;
-    out[key] = c + (t - c) * factor;
+    const speed = key === "leftEyeOpen" || key === "rightEyeOpen" ? Math.max(factor, 0.72)
+      : key === "mouthOpen" || key === "tongueOut" ? Math.max(factor, 0.55)
+      : factor;
+    out[key] = c + (t - c) * speed;
   }
   out.faceCenter = target.faceCenter || current.faceCenter;
   out.faceSize = target.faceSize || current.faceSize;
@@ -236,10 +245,10 @@ export function combineRig(rig, overlay) {
     browRaise: clamp(rig.browRaise * 0.35 + overlay.browRaise * 0.8, -1, 1.2),
     browInnerRaise: clamp(overlay.browInnerRaise, -1, 1),
     browAngle: clamp(overlay.browAngle, -1, 1),
-    mouthOpen: clamp(rig.mouthOpen + overlay.mouthOpenBoost * 0.5, 0, 1),
-    cornerLift: clamp(rig.cornerLift * 0.45 + overlay.mouthCornerLift * 0.75, -1, 1),
+    mouthOpen: clamp(rig.mouthOpen + overlay.mouthOpenBoost * 0.6, 0, 1),
+    cornerLift: clamp(rig.cornerLift * 0.78 + overlay.mouthCornerLift * 0.86, -1, 1),
     mouthTighten: clamp(overlay.mouthTighten, 0, 1),
-    mouthWiden: clamp(overlay.mouthWiden, -1, 1),
+    mouthWiden: clamp(overlay.mouthWiden + rig.smile * 0.3, -1, 1),
     mouthRound: clamp(overlay.mouthRound, 0, 1),
     mouthAsym: clamp(overlay.mouthAsym, -1, 1),
     noseWrinkle: clamp(overlay.noseWrinkle, 0, 1),
@@ -247,5 +256,8 @@ export function combineRig(rig, overlay) {
     roll: rig.roll,
     yaw: rig.yaw,
     pitch: rig.pitch,
+    gazeX: rig.gazeX,
+    gazeY: rig.gazeY,
+    tongueOut: rig.tongueOut,
   };
 }

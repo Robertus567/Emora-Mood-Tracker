@@ -5,15 +5,38 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Camera as CameraIcon, ImageDown, Sparkles } from "lucide-react";
 import { EMOTION_ORDER, emotionMeta, dominantFromScores } from "@/lib/emotions";
 import { extractRig, expressionOverlay, combineRig, smoothRig, IDLE_RIG } from "@/lib/avatarMath";
+import { extractVisualTracking } from "@/lib/avatarVisualTracking";
 import { drawAvatar, CHARACTERS } from "@/lib/avatarRenderer";
 import { sfx } from "@/lib/sfx";
 import PhotoPopup from "@/components/PhotoPopup";
 
 const MODEL_URL = "/models";
-const TICK_MS = 140;
+const TICK_MS = 100;
 const SMOOTHING = 0.32;
 const STALE_TO_IDLE = 5;
 const IDLE_EXPR = { neutral: 1, happy: 0, sad: 0, angry: 0, fearful: 0, disgusted: 0, surprised: 0 };
+const PREVIEW_EMOTIONS = ["neutral", "happy", "sad", "angry", "fearful", "disgusted", "surprised"];
+
+function lerpExpr(current, target, factor) {
+  const out = {};
+  for (const key of EMOTION_ORDER) {
+    const c = current[key] ?? 0;
+    const t = target[key] ?? 0;
+    out[key] = c + (t - c) * factor;
+  }
+  return out;
+}
+
+function AvatarThumbnail({ character }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext("2d");
+    drawAvatar(context, canvas.width, canvas.height, combineRig(IDLE_RIG, expressionOverlay(IDLE_EXPR)), character, 0);
+  }, [character]);
+  return <canvas ref={canvasRef} width={88} height={88} className="h-11 w-11" aria-hidden="true" />;
+}
 
 export default function AvatarStudio() {
   const videoRef = useRef(null);
@@ -22,6 +45,8 @@ export default function AvatarStudio() {
   const intervalRef = useRef(null);
   const rafRef = useRef(null);
   const faceapiRef = useRef(null);
+  const visualCanvasRef = useRef(null);
+  const detectingRef = useRef(false);
   const rigRef = useRef({ ...IDLE_RIG });
   const targetRigRef = useRef({ ...IDLE_RIG });
   const exprRef = useRef({ ...IDLE_EXPR });
@@ -34,6 +59,20 @@ export default function AvatarStudio() {
   const [character, setCharacter] = useState(CHARACTERS[0]);
   const [live, setLive] = useState(null);
   const [photoDataUrl, setPhotoDataUrl] = useState(null);
+  const [previewEmotion, setPreviewEmotion] = useState("happy");
+  const [previewWink, setPreviewWink] = useState(false);
+  const [previewTongue, setPreviewTongue] = useState(false);
+
+  useEffect(() => {
+    if (phase === "live") return;
+    targetExprRef.current = { ...IDLE_EXPR, neutral: previewEmotion === "neutral" ? 1 : 0, [previewEmotion]: 1 };
+    targetRigRef.current = {
+      ...IDLE_RIG,
+      leftEyeOpen: previewWink ? 0.05 : 1,
+      tongueOut: previewTongue ? 1 : 0,
+      mouthOpen: previewTongue ? 0.65 : 0,
+    };
+  }, [phase, previewEmotion, previewWink, previewTongue]);
 
   useEffect(() => {
     characterRef.current = character;
@@ -83,8 +122,9 @@ export default function AvatarStudio() {
   async function detectTick() {
     const faceapi = faceapiRef.current;
     const video = videoRef.current;
-    if (!faceapi || !video || video.readyState < 2) return;
-
+    if (!faceapi || !video || video.readyState < 2 || detectingRef.current) return;
+    detectingRef.current = true;
+    try {
     const detection = await faceapi
       .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
       .withFaceLandmarks(true)
@@ -92,7 +132,15 @@ export default function AvatarStudio() {
 
     if (detection) {
       staleRef.current = 0;
-      targetRigRef.current = extractRig(detection.landmarks, detection.detection.box);
+      const geometricRig = extractRig(detection.landmarks, detection.detection.box);
+      visualCanvasRef.current ||= document.createElement("canvas");
+      const visual = extractVisualTracking(video, detection.landmarks, geometricRig.mouthOpen, visualCanvasRef.current);
+      targetRigRef.current = {
+        ...geometricRig,
+        gazeX: visual.gazeX ?? geometricRig.gazeX,
+        gazeY: visual.gazeY ?? geometricRig.gazeY,
+        tongueOut: visual.tongueOut,
+      };
       targetExprRef.current = detection.expressions;
       setLive(detection.expressions);
     } else {
@@ -103,24 +151,18 @@ export default function AvatarStudio() {
         setLive(null);
       }
     }
-  }
-
-  function lerpExpr(current, target, factor) {
-    const out = {};
-    for (const key of EMOTION_ORDER) {
-      const c = current[key] ?? 0;
-      const t = target[key] ?? 0;
-      out[key] = c + (t - c) * factor;
+    } catch {
+      // A dropped webcam frame should not stop the animation or camera.
+    } finally {
+      detectingRef.current = false;
     }
-    return out;
   }
 
-  function renderLoop(t) {
+  const renderLoop = useCallback(function frame(t) {
     const canvas = avatarCanvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext("2d");
-      const idleBlend = staleRef.current > STALE_TO_IDLE ? 1 : 0;
-      const breathe = idleBlend ? Math.sin(t / 1100) * 0.03 : 0;
+      const breathe = Math.sin(t / 1100) * 0.018;
 
       rigRef.current = smoothRig(rigRef.current, targetRigRef.current, SMOOTHING);
       exprRef.current = lerpExpr(exprRef.current, targetExprRef.current, SMOOTHING);
@@ -129,10 +171,10 @@ export default function AvatarStudio() {
       const combined = combineRig({ ...rigRef.current, pitch: rigRef.current.pitch + breathe }, overlay);
       drawAvatar(ctx, canvas.width, canvas.height, combined, characterRef.current, t);
     }
-    rafRef.current = requestAnimationFrame(renderLoop);
-  }
+    rafRef.current = requestAnimationFrame(frame);
+  }, []);
 
-  function resizeCanvas() {
+  const resizeCanvas = useCallback(() => {
     const canvas = avatarCanvasRef.current;
     const wrap = canvas?.parentElement;
     if (!canvas || !wrap) return;
@@ -141,7 +183,16 @@ export default function AvatarStudio() {
     canvas.height = wrap.clientHeight * dpr;
     canvas.style.width = `${wrap.clientWidth}px`;
     canvas.style.height = `${wrap.clientHeight}px`;
-  }
+  }, []);
+
+  useEffect(() => {
+    resizeCanvas();
+    const wrap = avatarCanvasRef.current?.parentElement;
+    const observer = wrap && typeof ResizeObserver !== "undefined" ? new ResizeObserver(resizeCanvas) : null;
+    if (wrap && observer) observer.observe(wrap);
+    rafRef.current = requestAnimationFrame(renderLoop);
+    return () => observer?.disconnect();
+  }, [renderLoop, resizeCanvas]);
 
   async function startStudio() {
     setErrorMsg("");
@@ -157,7 +208,6 @@ export default function AvatarStudio() {
       resizeCanvas();
       setPhase("live");
       intervalRef.current = setInterval(detectTick, TICK_MS);
-      rafRef.current = requestAnimationFrame(renderLoop);
     } catch (err) {
       const denied = err && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError");
       setErrorMsg(
@@ -179,7 +229,7 @@ export default function AvatarStudio() {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("orientationchange", onResize);
     };
-  }, [phase]);
+  }, [phase, resizeCanvas]);
 
   function takeAvatarSnapshot() {
     sfx.shutter();
@@ -238,25 +288,16 @@ export default function AvatarStudio() {
           )}
 
           {phase === "loading-models" && (
-            <div className="absolute inset-0 grid place-items-center">
-              <p className="text-soft text-sm animate-pulse-soft">Menyiapkan panggung karakter…</p>
-            </div>
+            <p className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-4 py-2 text-white text-xs animate-pulse-soft whitespace-nowrap">
+              Menyiapkan kamera…
+            </p>
           )}
 
           {phase === "ready" && (
-            <div className="absolute inset-0 grid place-items-center p-8">
-              <div className="text-center">
-                <div className="mx-auto mb-5 h-14 w-14 rounded-full bg-grad-ember grid place-items-center shadow-ember">
-                  <CameraIcon className="h-6 w-6 text-ink-950" strokeWidth={2} />
-                </div>
-                <p className="text-soft text-sm mb-5 max-w-xs mx-auto">
-                  Nyalakan kamera untuk menghidupkan karaktermu — mulut, mata, alis, dan
-                  kemiringan kepala mengikuti ekspresi wajahmu secara langsung.
-                </p>
-                <button onClick={startStudio} onMouseEnter={sfx.hover} className="btn-primary">
-                  Hidupkan karakter
-                </button>
-              </div>
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2">
+              <button onClick={startStudio} onMouseEnter={sfx.hover} className="btn-primary whitespace-nowrap">
+                <CameraIcon className="h-4 w-4" /> Nyalakan kamera
+              </button>
             </div>
           )}
 
@@ -298,13 +339,15 @@ export default function AvatarStudio() {
                       setCharacter(c);
                     }}
                     onMouseEnter={sfx.hover}
-                    className={`flex flex-col items-center gap-1.5 rounded-xl py-3 transition-all duration-300 ${
+                    aria-label={`Pilih karakter ${c.label}`}
+                    aria-pressed={active}
+                    className={`flex flex-col items-center gap-1 rounded-xl py-2 transition-all duration-300 ${
                       active
                         ? "bg-grad-ember shadow-ember scale-[1.03]"
                         : "surface-sunken hover:scale-[1.03]"
                     }`}
                   >
-                    <span className="text-xl leading-none">{c.emoji}</span>
+                    <AvatarThumbnail character={c} />
                     <span className={`text-[0.7rem] font-medium ${active ? "text-ink-950" : ""}`}>
                       {c.label}
                     </span>
@@ -360,23 +403,44 @@ export default function AvatarStudio() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
-                className="flex-1 flex flex-col justify-center gap-4"
+                className="flex items-start gap-2 rounded-xl surface-sunken px-3 py-2.5"
               >
-                <div className="flex items-start gap-2.5 rounded-xl surface-sunken px-4 py-3.5">
-                  <Sparkles className="h-4 w-4 text-accent shrink-0 mt-0.5" strokeWidth={2} />
-                  <p className="text-[0.8rem] text-soft leading-relaxed">
-                    Setiap karakter punya bentuk mata, alis, dan mulut sendiri, dan
-                    mengikuti tujuh ekspresi wajahmu — senang, sedih, marah, takut,
-                    jijik, terkejut, dan biasa.
-                  </p>
-                </div>
-                <p className="text-[0.78rem] text-soft leading-relaxed">
-                  Ganti karakter kapan saja, bahkan setelah kamera menyala. Gambar yang
-                  kamu ambil langsung terunduh ke perangkatmu.
+                <Sparkles className="h-4 w-4 text-accent shrink-0 mt-0.5" strokeWidth={2} />
+                <p className="text-[0.75rem] text-soft leading-relaxed">
+                  Pilih ekspresi di bawah untuk melihat gerak karakter, lalu nyalakan kamera untuk mengikuti wajahmu.
                 </p>
               </motion.div>
             )}
           </AnimatePresence>
+          {phase !== "live" && (
+            <div className="border-t hairline pt-4">
+              <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium mb-3">
+                Coba ekspresi karakter
+              </p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {PREVIEW_EMOTIONS.map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => setPreviewEmotion(key)}
+                    aria-pressed={previewEmotion === key}
+                    className={`rounded-lg px-1 py-2 text-[0.7rem] transition-colors ${previewEmotion === key ? "bg-grad-ember text-ink-950 font-semibold" : "surface-sunken hover:opacity-75"}`}
+                  >
+                    {emotionMeta(key).label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button onClick={() => setPreviewWink((value) => !value)} aria-pressed={previewWink}
+                  className={`rounded-lg px-3 py-2 text-xs ${previewWink ? "bg-grad-ember text-ink-950" : "surface-sunken"}`}>
+                  Kedip
+                </button>
+                <button onClick={() => setPreviewTongue((value) => !value)} aria-pressed={previewTongue}
+                  className={`rounded-lg px-3 py-2 text-xs ${previewTongue ? "bg-grad-ember text-ink-950" : "surface-sunken"}`}>
+                  Melet
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

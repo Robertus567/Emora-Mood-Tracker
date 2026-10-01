@@ -9,7 +9,7 @@ import { FILTERS, drawFilter } from "@/lib/faceFilters";
 import { sfx } from "@/lib/sfx";
 
 const MODEL_URL = "/models";
-const TICK_MS = 200;
+const TICK_MS = 120;
 const UPLOAD_MAX_WIDTH = 640;
 const UPLOAD_QUALITY = 0.78;
 
@@ -58,6 +58,7 @@ export default function FaceScanner() {
   const liveRef = useRef(null);
   const latestDetectionRef = useRef(null);
   const filterRef = useRef("none");
+  const detectingRef = useRef(false);
 
   const [phase, setPhase] = useState("loading-models");
   const [errorMsg, setErrorMsg] = useState("");
@@ -150,7 +151,9 @@ export default function FaceScanner() {
     const faceapi = faceapiRef.current;
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!faceapi || !video || !canvas || video.readyState < 2) return;
+    if (!faceapi || !video || !canvas || video.readyState < 2 || detectingRef.current) return;
+    detectingRef.current = true;
+    try {
 
     const dims = { width: video.videoWidth, height: video.videoHeight };
     if (canvas.width !== dims.width) canvas.width = dims.width;
@@ -171,6 +174,11 @@ export default function FaceScanner() {
       setStaleTicks((n) => n + 1);
       latestDetectionRef.current = null;
       drawOverlay(null);
+    }
+    } catch {
+      // Keep the camera active if an individual frame cannot be analyzed.
+    } finally {
+      detectingRef.current = false;
     }
   }
 
@@ -217,6 +225,7 @@ export default function FaceScanner() {
     sctx.translate(still.width, 0);
     sctx.scale(-1, 1);
     sctx.drawImage(video, 0, 0, still.width, still.height);
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
 
     const detection = latestDetectionRef.current;
     if (detection && filterRef.current !== "none") {

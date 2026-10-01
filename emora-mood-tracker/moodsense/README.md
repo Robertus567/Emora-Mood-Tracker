@@ -16,12 +16,13 @@ dan **Neon Postgres** untuk penyimpanan.
 - **Galeri Mood** (`/gallery`) — kumpulan foto hasil scan dari semua pengunjung,
   tiap foto menampilkan persentase ekspresi dominannya, bisa diunduh siapa saja,
   dan bisa dihapus langsung dari tombol di foto itu sendiri.
-- **Avatar** (`/avatar`) — pilih salah satu dari 6 karakter (rubah, kucing, beruang,
-  kelinci, robot, alien), masing-masing punya bentuk mata, alis, dan mulut sendiri.
-  Karakternya bergerak mengikuti kedipan mata, bukaan mulut, alis, dan kemiringan
-  kepalamu — serta benar-benar menampilkan ketujuh ekspresi (bukan cuma senang/
-  sedih): marah, takut, jijik, dan terkejut masing-masing punya pose wajah sendiri.
-  Gambar karakter bisa diunduh langsung.
+- **Avatar** (`/avatar`) — pilih satu dari 7 karakter (rubah, kucing, beruang,
+  kelinci, robot, alien, atau anime). Masing-masing punya siluet, mata, dan mulut
+  khas. Pratinjau ekspresi tersedia tanpa kamera. Saat kamera aktif, karakter
+  mengikuti kedipan, bukaan mulut, arah kepala, dan tujuh ekspresi. Area mata
+  dan mulut juga dianalisis secara lokal untuk memperkirakan arah pandang dan
+  lidah; hasilnya dapat bervariasi mengikuti cahaya kamera. Gambar karakter
+  bisa diunduh langsung.
 - **Efek suara** — setiap tombol punya bunyi saat disentuh kursor & saat diklik,
   plus bunyi rana kamera saat menangkap foto, semuanya disintesis langsung di
   browser (tidak ada file audio yang diunduh).
