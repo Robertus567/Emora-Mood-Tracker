@@ -6,7 +6,7 @@ import { Camera as CameraIcon, ImageDown, Sparkles } from "lucide-react";
 import { EMOTION_ORDER, emotionMeta, dominantFromScores } from "@/lib/emotions";
 import { extractRig, expressionOverlay, combineRig, smoothRig, IDLE_RIG } from "@/lib/avatarMath";
 import { extractVisualTracking } from "@/lib/avatarVisualTracking";
-import { drawAvatar, CHARACTERS } from "@/lib/avatarRenderer";
+import { CHARACTERS, drawAvatar, loadAvatarImage } from "@/lib/illustratedAvatarRenderer";
 import { sfx } from "@/lib/sfx";
 import PhotoPopup from "@/components/PhotoPopup";
 
@@ -33,7 +33,9 @@ function AvatarThumbnail({ character }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const context = canvas.getContext("2d");
-    drawAvatar(context, canvas.width, canvas.height, combineRig(IDLE_RIG, expressionOverlay(IDLE_EXPR)), character, 0);
+    const draw = () => drawAvatar(context, canvas.width, canvas.height, combineRig(IDLE_RIG, expressionOverlay(IDLE_EXPR)), character);
+    loadAvatarImage(character, draw);
+    draw();
   }, [character]);
   return <canvas ref={canvasRef} width={88} height={88} className="h-11 w-11" aria-hidden="true" />;
 }
