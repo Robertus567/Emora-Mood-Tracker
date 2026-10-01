@@ -47,6 +47,14 @@ function earToOpenness(ear) {
   return clamp((ear - CLOSED) / (OPEN - CLOSED), 0, 1);
 }
 
+// Landmark noise and a slight head turn often make one open eye appear much
+// smaller than the other. Keep ordinary blinks paired, but preserve a real wink.
+export function coordinateEyeOpenness(left, right) {
+  const average = (left + right) / 2;
+  const clearWink = Math.min(left, right) < 0.2 && Math.max(left, right) > 0.7;
+  return clearWink ? [left, right] : [average, average];
+}
+
 export function extractRig(landmarks, box) {
   const pts = landmarks.positions;
 
@@ -88,10 +96,13 @@ export function extractRig(landmarks, box) {
   const chinY = pts[8].y;
   const noseRatio = (noseTip.y - eyeMidY) / (chinY - eyeMidY || 1);
   const pitch = clamp((noseRatio - 0.42) * 2.6, -1, 1);
+  const [leftEyeOpen, rightEyeOpen] = coordinateEyeOpenness(
+    earToOpenness(leftEAR), earToOpenness(rightEAR)
+  );
 
   return {
-    leftEyeOpen: earToOpenness(leftEAR),
-    rightEyeOpen: earToOpenness(rightEAR),
+    leftEyeOpen,
+    rightEyeOpen,
     mouthOpen,
     smile,
     cornerLift,
@@ -124,16 +135,19 @@ export const IDLE_RIG = {
   faceSize: null,
 };
 
-export function smoothRig(current, target, factor) {
+export function smoothRig(current, target, deltaMs) {
   const out = { ...current };
+  const elapsed = clamp(deltaMs, 0, 50);
   for (const key of Object.keys(IDLE_RIG)) {
     if (key === "faceCenter" || key === "faceSize") continue;
     const c = current[key] ?? 0;
     const t = target[key] ?? 0;
-    const speed = key === "leftEyeOpen" || key === "rightEyeOpen" ? Math.max(factor, 0.72)
-      : key === "mouthOpen" || key === "tongueOut" ? Math.max(factor, 0.55)
-      : factor;
-    out[key] = c + (t - c) * speed;
+    const responseMs = key === "leftEyeOpen" || key === "rightEyeOpen" ? 28
+      : key === "mouthOpen" || key === "tongueOut" ? 38
+      : key === "gazeX" || key === "gazeY" ? 48
+      : 68;
+    const blend = 1 - Math.exp(-elapsed / responseMs);
+    out[key] = c + (t - c) * blend;
   }
   out.faceCenter = target.faceCenter || current.faceCenter;
   out.faceSize = target.faceSize || current.faceSize;

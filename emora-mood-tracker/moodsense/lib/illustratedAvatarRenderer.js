@@ -13,7 +13,7 @@ export const CHARACTERS = [
 const ART = {
   fox: { eyes: [365, 635, 419], size: [61, 48], nose: [500, 546], mouth: [500, 603], ink: "#453048", iris: "#b66b2c", blush: "#ee9d92", style: "fox" },
   cat: { eyes: [365, 635, 378], size: [57, 49], nose: [500, 494], mouth: [500, 546], ink: "#624344", iris: "#499ca2", blush: "#eea3ad", style: "cat" },
-  bear: { eyes: [365, 635, 381], size: [53, 48], nose: [500, 556], mouth: [500, 611], ink: "#4c322d", iris: "#7a4a37", blush: "#eaa0a0", style: "bear" },
+  bear: { eyes: [365, 635, 381], size: [53, 48], nose: [500, 556], mouth: [500, 594], ink: "#4c322d", iris: "#7a4a37", blush: "#eaa0a0", style: "bear" },
   bunny: { eyes: [365, 635, 499], size: [63, 55], nose: [500, 614], mouth: [500, 660], ink: "#755263", iris: "#9a6aab", blush: "#f2b3c5", style: "bunny" },
   robot: { eyes: [371, 629, 320], size: [67, 63], nose: null, mouth: [500, 430], ink: "#b7f3ff", iris: "#6ee5ff", blush: null, style: "robot" },
   alien: { eyes: [362, 638, 422], size: [76, 86], nose: [500, 545], mouth: [500, 585], ink: "#254f51", iris: "#48aeb4", blush: "#e4b4d5", style: "alien" },
@@ -83,8 +83,8 @@ function drawEye(ctx, x, y, rx, ry, openness, gazeX, gazeY, rig, art, side) {
   ctx.beginPath();
   if (style === "fox") {
     ctx.moveTo(x - rx, y + 3);
-    ctx.quadraticCurveTo(x - rx * 0.2, top - ry * 0.36, x + rx, y - 2);
-    ctx.quadraticCurveTo(x + rx * 0.35, bottom + ry * 0.23, x - rx, y + 3);
+    ctx.quadraticCurveTo(x, top - ry * 0.2, x + rx, y + 3);
+    ctx.quadraticCurveTo(x, bottom + ry * 0.1, x - rx, y + 3);
   } else {
     ctx.ellipse(x, y, rx, ry * open, 0, 0, TAU);
   }
@@ -93,7 +93,7 @@ function drawEye(ctx, x, y, rx, ry, openness, gazeX, gazeY, rig, art, side) {
   stroke(ctx, style === "anime" ? "#b98a9f" : ink, style === "anime" ? 3 : 4);
   ctx.clip();
 
-  const gx = clamp(gazeX, -1, 1) * rx * 0.34;
+  const gx = clamp(gazeX, -1, 1) * rx * 0.24;
   const gy = clamp(gazeY, -1, 1) * ry * 0.26;
   const irisR = (style === "anime" ? 0.72 : style === "alien" ? 0.65 : style === "robot" ? 0.68 : 0.62) * Math.min(rx, ry);
   if (style === "robot") {
@@ -133,65 +133,82 @@ function drawEye(ctx, x, y, rx, ry, openness, gazeX, gazeY, rig, art, side) {
 function drawMouth(ctx, x, y, rig, art) {
   const { style, ink } = art;
   const smile = clamp(rig.cornerLift, -1, 1);
-  const surprised = rig.mouthRound > 0.52;
-  const open = clamp(rig.mouthOpen + (rig.tongueOut > 0.2 ? 0.3 : 0), 0, 1);
-  const width = (style === "anime" ? 27 : style === "robot" ? 57 : style === "alien" ? 49 : 45) *
-    (1 + rig.mouthWiden * 0.26 - rig.mouthTighten * 0.15);
-  const mouthHeight = 12 + open * (style === "anime" ? 34 : 40);
-  const isOpen = open > 0.21 || smile > 0.35 || surprised;
-
+  const open = clamp(rig.mouthOpen, 0, 1);
+  const fearfulRoundness = clamp((rig.browInnerRaise - 0.2) * 3, 0, 1) *
+    clamp(open * 8, 0, 1);
+  const roundness = clamp(Math.max(rig.mouthRound * 1.2, fearfulRoundness), 0, 1);
+  const asymmetry = clamp(rig.mouthAsym, -1, 1);
+  const baseWidth = style === "anime" ? 26 : style === "robot" ? 51 : style === "alien" ? 40 : 43;
+  const width = baseWidth * (1 + rig.mouthWiden * 0.2 - rig.mouthTighten * 0.16);
+  const mouthWidth = width * (1 - roundness * (style === "anime" ? 0.3 : 0.53));
+  const depth = 10 + open * 17 + Math.max(smile, 0) * 9 + roundness * 11;
+  const isOpen = open > 0.22 || smile > 0.42 || roundness > 0.12 ||
+    rig.tongueOut > 0.25 || (rig.browInnerRaise > 0.35 && open > 0.08);
   if (style === "robot") {
     ctx.shadowColor = "#69e8ff";
-    ctx.shadowBlur = 13;
+    ctx.shadowBlur = 10;
   }
 
   if (isOpen) {
+    const upperY = y - 3 - roundness * 5;
+    const leftY = upperY - asymmetry * 5;
+    const rightY = upperY + asymmetry * 5;
     ctx.beginPath();
-    if (surprised) {
-      ctx.ellipse(x, y + 8, width * 0.54, mouthHeight + 7, 0, 0, TAU);
-    } else {
-      ctx.moveTo(x - width, y - 7);
-      ctx.quadraticCurveTo(x, y + 5 - smile * 5, x + width, y - 7);
-      ctx.quadraticCurveTo(x + width * 0.76, y + mouthHeight * 1.5, x, y + mouthHeight * 1.55);
-      ctx.quadraticCurveTo(x - width * 0.76, y + mouthHeight * 1.5, x - width, y - 7);
-    }
+    ctx.moveTo(x - mouthWidth, leftY);
+    ctx.bezierCurveTo(x - mouthWidth * 0.8, y + 4 - roundness * 13,
+      x + mouthWidth * 0.8, y + 4 - roundness * 13, x + mouthWidth, rightY);
+    ctx.bezierCurveTo(x + mouthWidth * 0.94, y + depth * 0.8,
+      x + mouthWidth * 0.44, y + depth, x, y + depth);
+    ctx.bezierCurveTo(x - mouthWidth * 0.44, y + depth,
+      x - mouthWidth * 0.94, y + depth * 0.8, x - mouthWidth, leftY);
     ctx.closePath();
-    ctx.fillStyle = style === "robot" ? "#12364c" : "#7c3d50";
+    ctx.fillStyle = style === "robot" ? "#12364c" : "#783d50";
     ctx.fill();
-    stroke(ctx, ink, 4);
-    ctx.shadowBlur = 0;
-    if (style !== "robot" && !surprised) {
+    stroke(ctx, ink, style === "anime" ? 3.5 : 4);
+    if (style !== "robot" && roundness < 0.25 && smile > 0.2) {
       ctx.save();
       ctx.clip();
       ctx.beginPath();
-      ctx.ellipse(x, y - 2, width * 0.68, 10, 0, 0, TAU);
+      ctx.ellipse(x, y + 1, mouthWidth * 0.66, 7, 0, 0, TAU);
       ctx.fillStyle = "#fff8eb";
       ctx.fill();
-      ellipse(ctx, x, y + mouthHeight * 1.42, width * 0.63, 14, "#ef8d9d");
+      ellipse(ctx, x, y + depth * 0.98, mouthWidth * 0.53, 9, "#ef8d9d");
       ctx.restore();
     }
   } else {
+    const cornerY = y + (smile < 0 ? 7 : 0);
+    const curveY = smile >= 0 ? 13 * smile : -22 * Math.abs(smile);
+    const lineWidth = width * (style === "anime" ? 0.75 : 0.85);
     ctx.beginPath();
-    ctx.moveTo(x - width, y + (smile < 0 ? 11 : 0));
-    ctx.quadraticCurveTo(x, y + (smile >= 0 ? 20 * smile : -28 * Math.abs(smile)), x + width, y + (smile < 0 ? 11 : 0));
-    stroke(ctx, ink, style === "anime" ? 5 : 6);
-    ctx.shadowBlur = 0;
+    ctx.moveTo(x - lineWidth, cornerY - asymmetry * 6);
+    ctx.quadraticCurveTo(x, y + curveY, x + lineWidth, cornerY + asymmetry * 6);
+    stroke(ctx, ink, style === "anime" ? 4.5 : 5);
+    if ((style === "cat" || style === "bunny") && smile > -0.18 && Math.abs(asymmetry) < 0.2) {
+      ctx.beginPath();
+      ctx.moveTo(x, y + curveY * 0.55);
+      ctx.quadraticCurveTo(x + lineWidth * 0.35, y + 11, x + lineWidth * 0.65, y + 2);
+      stroke(ctx, ink, 2.5);
+    }
   }
+  ctx.shadowBlur = 0;
 
   if (rig.tongueOut > 0.2 && style !== "robot") {
-    const length = 21 + rig.tongueOut * 35;
+    const maxLength = style === "bear" ? 34 : style === "cat" ? 37 : style === "anime" ? 43 : 40;
+    const tongueBottom = y + Math.min(depth + rig.tongueOut * 10, maxLength);
+    const tongueTop = y + Math.min(depth * 0.42, 15);
+    const tongueWidth = style === "anime" ? 10 : 13;
     ctx.beginPath();
-    ctx.moveTo(x - 18, y + 24);
-    ctx.quadraticCurveTo(x - 19, y + length, x, y + length + 4);
-    ctx.quadraticCurveTo(x + 19, y + length, x + 18, y + 24);
+    ctx.moveTo(x - tongueWidth, tongueTop);
+    ctx.quadraticCurveTo(x - tongueWidth * 1.2, tongueBottom, x, tongueBottom + 2);
+    ctx.quadraticCurveTo(x + tongueWidth * 1.2, tongueBottom, x + tongueWidth, tongueTop);
     ctx.closePath();
     ctx.fillStyle = "#f38eaa";
     ctx.fill();
-    stroke(ctx, "#a65372", 3);
+    stroke(ctx, "#a65372", 2.5);
     ctx.beginPath();
-    ctx.moveTo(x, y + length - 15);
-    ctx.lineTo(x, y + length + 1);
-    stroke(ctx, "#d76587", 2);
+    ctx.moveTo(x, tongueBottom - 9);
+    ctx.lineTo(x, tongueBottom + 1);
+    stroke(ctx, "#d76587", 1.7);
   }
 }
 
@@ -284,7 +301,7 @@ function drawFace(ctx, rig, art) {
   }
 }
 
-export function drawAvatar(ctx, width, height, rig, character, thumbnail = false) {
+export function drawAvatar(ctx, width, height, rig, character, thumbnail = false, time = 0) {
   ctx.clearRect(0, 0, width, height);
   const art = ART[character?.id || "fox"];
   const requestedImage = loadAvatarImage(character, null, thumbnail);
@@ -297,12 +314,15 @@ export function drawAvatar(ctx, width, height, rig, character, thumbnail = false
   const scale = Math.min((width * 0.75) / image.naturalWidth, (height * 1.08) / image.naturalHeight);
   const drawWidth = image.naturalWidth * scale;
   const drawHeight = image.naturalHeight * scale;
-  const centerX = width / 2 + clamp(rig.yaw, -1, 1) * drawWidth * 0.028;
+  const centerX = width / 2 + clamp(rig.yaw, -1, 1) * drawWidth * 0.045;
   const top = height * 0.01;
+  const breathe = thumbnail ? 0 : Math.sin(time / 900) * Math.min(height * 0.005, 3);
+  const sway = thumbnail ? 0 : Math.sin(time / 1650) * 0.004;
+  const nod = thumbnail ? 0 : clamp(rig.pitch, -1, 1) * Math.min(height * 0.014, 6);
   ctx.save();
-  ctx.translate(centerX, top + drawHeight * 0.48);
-  ctx.rotate(clamp(rig.roll, -0.55, 0.55) * 0.68);
-  ctx.scale(1 - Math.abs(rig.yaw) * 0.055, 1);
+  ctx.translate(centerX, top + drawHeight * 0.48 + breathe + nod);
+  ctx.rotate(clamp(rig.roll, -0.55, 0.55) * 0.68 + sway);
+  ctx.scale(1 - Math.abs(rig.yaw) * 0.08, 1);
   ctx.translate(-drawWidth / 2, -drawHeight * 0.48);
   ctx.scale(drawWidth / 1000, drawHeight / 1000);
   ctx.drawImage(image, 0, 0, 1000, 1000);

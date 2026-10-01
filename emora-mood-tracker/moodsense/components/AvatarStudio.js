@@ -11,9 +11,9 @@ import { sfx } from "@/lib/sfx";
 import PhotoPopup from "@/components/PhotoPopup";
 
 const MODEL_URL = "/models";
-const TICK_MS = 100;
-const SMOOTHING = 0.32;
-const STALE_TO_IDLE = 5;
+const DETECTION_MIN_MS = 45;
+const FACE_LOST_MS = 650;
+const READOUT_MS = 120;
 const IDLE_EXPR = { neutral: 1, happy: 0, sad: 0, angry: 0, fearful: 0, disgusted: 0, surprised: 0 };
 const PREVIEW_EMOTIONS = ["neutral", "happy", "sad", "angry", "fearful", "disgusted", "surprised"];
 
@@ -44,17 +44,23 @@ export default function AvatarStudio() {
   const videoRef = useRef(null);
   const avatarCanvasRef = useRef(null);
   const streamRef = useRef(null);
-  const intervalRef = useRef(null);
+  const detectionTimerRef = useRef(null);
+  const videoFrameRef = useRef(null);
+  const detectionSessionRef = useRef(0);
+  const lastDetectionAtRef = useRef(0);
+  const lastFaceAtRef = useRef(0);
+  const lastReadoutAtRef = useRef(0);
+  const lastFrameAtRef = useRef(null);
   const rafRef = useRef(null);
   const faceapiRef = useRef(null);
   const visualCanvasRef = useRef(null);
   const detectingRef = useRef(false);
+  const winkCandidateRef = useRef({ side: null, frames: 0 });
   const rigRef = useRef({ ...IDLE_RIG });
   const targetRigRef = useRef({ ...IDLE_RIG });
   const exprRef = useRef({ ...IDLE_EXPR });
   const targetExprRef = useRef({ ...IDLE_EXPR });
   const characterRef = useRef(CHARACTERS[0]);
-  const staleRef = useRef(0);
 
   const [phase, setPhase] = useState("loading-models");
   const [errorMsg, setErrorMsg] = useState("");
@@ -105,9 +111,15 @@ export default function AvatarStudio() {
   }, []);
 
   const stopAll = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    detectionSessionRef.current += 1;
+    winkCandidateRef.current = { side: null, frames: 0 };
+    if (detectionTimerRef.current !== null) {
+      clearTimeout(detectionTimerRef.current);
+      detectionTimerRef.current = null;
+    }
+    if (videoFrameRef.current !== null && videoRef.current?.cancelVideoFrameCallback) {
+      videoRef.current.cancelVideoFrameCallback(videoFrameRef.current);
+      videoFrameRef.current = null;
     }
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
@@ -121,7 +133,7 @@ export default function AvatarStudio() {
 
   useEffect(() => stopAll, [stopAll]);
 
-  async function detectTick() {
+  async function detectTick(session) {
     const faceapi = faceapiRef.current;
     const video = videoRef.current;
     if (!faceapi || !video || video.readyState < 2 || detectingRef.current) return;
@@ -131,10 +143,28 @@ export default function AvatarStudio() {
       .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
       .withFaceLandmarks(true)
       .withFaceExpressions();
+    if (session !== detectionSessionRef.current || !streamRef.current) return;
 
     if (detection) {
-      staleRef.current = 0;
+      const now = performance.now();
+      lastFaceAtRef.current = now;
       const geometricRig = extractRig(detection.landmarks, detection.detection.box);
+      const winkSide = geometricRig.leftEyeOpen + 0.5 < geometricRig.rightEyeOpen ? "left"
+        : geometricRig.rightEyeOpen + 0.5 < geometricRig.leftEyeOpen ? "right" : null;
+      if (winkSide) {
+        const previous = winkCandidateRef.current;
+        winkCandidateRef.current = {
+          side: winkSide,
+          frames: previous.side === winkSide ? previous.frames + 1 : 1,
+        };
+        if (winkCandidateRef.current.frames < 2) {
+          const paired = (geometricRig.leftEyeOpen + geometricRig.rightEyeOpen) / 2;
+          geometricRig.leftEyeOpen = paired;
+          geometricRig.rightEyeOpen = paired;
+        }
+      } else {
+        winkCandidateRef.current = { side: null, frames: 0 };
+      }
       visualCanvasRef.current ||= document.createElement("canvas");
       const visual = extractVisualTracking(video, detection.landmarks, geometricRig.mouthOpen, visualCanvasRef.current);
       targetRigRef.current = {
@@ -144,14 +174,14 @@ export default function AvatarStudio() {
         tongueOut: visual.tongueOut,
       };
       targetExprRef.current = detection.expressions;
-      setLive(detection.expressions);
-    } else {
-      staleRef.current += 1;
-      if (staleRef.current > STALE_TO_IDLE) {
-        targetRigRef.current = { ...IDLE_RIG };
-        targetExprRef.current = { ...IDLE_EXPR };
-        setLive(null);
+      if (now - lastReadoutAtRef.current >= READOUT_MS) {
+        lastReadoutAtRef.current = now;
+        setLive(detection.expressions);
       }
+    } else if (performance.now() - lastFaceAtRef.current > FACE_LOST_MS) {
+      targetRigRef.current = { ...IDLE_RIG };
+      targetExprRef.current = { ...IDLE_EXPR };
+      setLive(null);
     }
     } catch {
       // A dropped webcam frame should not stop the animation or camera.
@@ -160,18 +190,39 @@ export default function AvatarStudio() {
     }
   }
 
+  // Start a new inference only after the previous one completes and a fresh
+  // camera frame arrives. The animation keeps its own display-timed loop.
+  async function detectLoop(session) {
+    if (session !== detectionSessionRef.current || !streamRef.current) return;
+    const waitMs = DETECTION_MIN_MS - (performance.now() - lastDetectionAtRef.current);
+    if (waitMs > 0) {
+      detectionTimerRef.current = setTimeout(() => detectLoop(session), waitMs);
+      return;
+    }
+    lastDetectionAtRef.current = performance.now();
+    await detectTick(session);
+    if (session !== detectionSessionRef.current || !streamRef.current) return;
+    const video = videoRef.current;
+    if (video?.requestVideoFrameCallback) {
+      videoFrameRef.current = video.requestVideoFrameCallback(() => detectLoop(session));
+    } else {
+      detectionTimerRef.current = setTimeout(() => detectLoop(session), DETECTION_MIN_MS);
+    }
+  }
+
   const renderLoop = useCallback(function frame(t) {
     const canvas = avatarCanvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext("2d");
-      const breathe = Math.sin(t / 1100) * 0.018;
+      const deltaMs = Math.min(50, Math.max(0, t - (lastFrameAtRef.current ?? t - 16.7)));
+      lastFrameAtRef.current = t;
 
-      rigRef.current = smoothRig(rigRef.current, targetRigRef.current, SMOOTHING);
-      exprRef.current = lerpExpr(exprRef.current, targetExprRef.current, SMOOTHING);
+      rigRef.current = smoothRig(rigRef.current, targetRigRef.current, deltaMs);
+      exprRef.current = lerpExpr(exprRef.current, targetExprRef.current, 1 - Math.exp(-deltaMs / 80));
 
       const overlay = expressionOverlay(exprRef.current);
-      const combined = combineRig({ ...rigRef.current, pitch: rigRef.current.pitch + breathe }, overlay);
-      drawAvatar(ctx, canvas.width, canvas.height, combined, characterRef.current);
+      const combined = combineRig(rigRef.current, overlay);
+      drawAvatar(ctx, canvas.width, canvas.height, combined, characterRef.current, false, t);
     }
     rafRef.current = requestAnimationFrame(frame);
   }, []);
@@ -209,8 +260,11 @@ export default function AvatarStudio() {
       await video.play();
       resizeCanvas();
       setPhase("live");
-      intervalRef.current = setInterval(detectTick, TICK_MS);
+      lastDetectionAtRef.current = 0;
+      lastFaceAtRef.current = performance.now();
+      detectLoop(++detectionSessionRef.current);
     } catch (err) {
+      stopAll();
       const denied = err && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError");
       setErrorMsg(
         denied

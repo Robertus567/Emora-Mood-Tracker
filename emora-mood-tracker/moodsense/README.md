@@ -23,7 +23,9 @@ dan **Neon Postgres** untuk penyimpanan.
   mengikuti kedipan, bukaan mulut, arah kepala, dan tujuh ekspresi. Area mata
   dan mulut juga dianalisis secara lokal untuk memperkirakan arah pandang dan
   lidah; hasilnya dapat bervariasi mengikuti cahaya kamera. Gambar karakter
-  bisa diunduh langsung.
+  bisa diunduh langsung. Animasi Canvas mengikuti refresh layar (termasuk
+  120 Hz bila didukung), dengan smoothing berbasis waktu; pembacaan kamera
+  tetap mengikuti kecepatan kamera dan inferensi model pada perangkat.
 - **Efek suara** — setiap tombol punya bunyi saat disentuh kursor & saat diklik,
   plus bunyi rana kamera saat menangkap foto, semuanya disintesis langsung di
   browser (tidak ada file audio yang diunduh).
