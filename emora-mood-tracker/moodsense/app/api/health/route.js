@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql, ensureSchema } from "@/lib/db";
+import { normalizeLocale, translate } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -7,7 +8,8 @@ export const revalidate = 0;
 // Visit /api/health directly in the browser to self-diagnose why photos
 // might not be showing up in Galeri Mood. It never exposes the connection
 // string itself — only whether it's set and whether Neon actually answers.
-export async function GET() {
+export async function GET(req) {
+  const t = (text) => translate(normalizeLocale(req.cookies.get("emora-locale")?.value), text);
   const hasEnvVar = Boolean(process.env.DATABASE_URL);
 
   if (!hasEnvVar) {
@@ -15,7 +17,7 @@ export async function GET() {
       ok: false,
       databaseUrlSet: false,
       message:
-        "DATABASE_URL tidak ditemukan di environment ini. Di Vercel: Project Settings → Environment Variables → tambahkan DATABASE_URL lalu redeploy.",
+        t("DATABASE_URL tidak ditemukan di environment ini. Di Vercel: Project Settings → Environment Variables → tambahkan DATABASE_URL lalu redeploy."),
     });
   }
 
@@ -33,8 +35,8 @@ export async function GET() {
       latestEntry: latest || null,
       message:
         count === 0
-          ? "Terhubung ke Neon dengan baik, tapi tabel gallery_photos masih kosong — coba scan lalu tekan \"Simpan ke Galeri\" sampai selesai."
-          : `Terhubung ke Neon. Ada ${count} catatan tersimpan.`,
+          ? t("Terhubung ke Neon dengan baik, tapi tabel gallery_photos masih kosong, coba scan lalu tekan \"Simpan ke Galeri\" sampai selesai.")
+          : `${t("Terhubung ke Neon. Ada")} ${count} ${t("catatan tersimpan.")}`,
     });
   } catch (err) {
     return NextResponse.json({
@@ -42,7 +44,7 @@ export async function GET() {
       databaseUrlSet: true,
       connected: false,
       message:
-        "DATABASE_URL sudah diatur tapi koneksi ke Neon gagal. Periksa apakah connection string masih valid dan database Neon-nya aktif (tidak sedang \"sleeping\"/dihapus).",
+        t("DATABASE_URL sudah diatur tapi koneksi ke Neon gagal. Periksa apakah connection string masih valid dan database Neon-nya aktif (tidak sedang \"sleeping\"/dihapus)."),
       error: err.message || String(err),
     });
   }

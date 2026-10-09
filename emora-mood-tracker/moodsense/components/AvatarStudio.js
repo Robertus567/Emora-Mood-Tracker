@@ -9,6 +9,7 @@ import { extractVisualTracking } from "@/lib/avatarVisualTracking";
 import { CHARACTERS, drawAvatar, loadAvatarImage } from "@/lib/illustratedAvatarRenderer";
 import { sfx } from "@/lib/sfx";
 import PhotoPopup from "@/components/PhotoPopup";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const MODEL_URL = "/models";
 const DETECTION_MIN_MS = 45;
@@ -41,6 +42,7 @@ function AvatarThumbnail({ character }) {
 }
 
 export default function AvatarStudio() {
+  const { locale, t } = useLanguage();
   const videoRef = useRef(null);
   const avatarCanvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -313,7 +315,7 @@ export default function AvatarStudio() {
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-ember-400" />
                 </span>
                 <span className="text-white text-[0.75rem] font-medium">
-                  {dominant ? emotionMeta(dominant.emotion).label : "Menyesuaikan…"}
+                  {dominant ? emotionMeta(dominant.emotion, locale).label : t("Menyesuaikan…")}
                 </span>
               </div>
 
@@ -334,8 +336,8 @@ export default function AvatarStudio() {
               <button
                 onClick={takeAvatarSnapshot}
                 onMouseEnter={sfx.hover}
-                aria-label="Ambil gambar avatar"
-                title="Ambil gambar avatar"
+                aria-label={t("Ambil gambar avatar")}
+                title={t("Ambil gambar avatar")}
                 className="absolute bottom-4 left-4 h-11 w-11 rounded-full bg-white/90 hover:bg-white grid place-items-center active:scale-95 transition-transform duration-200 shadow-lift"
               >
                 <ImageDown className="h-[18px] w-[18px] text-ink-950" strokeWidth={2} />
@@ -345,14 +347,14 @@ export default function AvatarStudio() {
 
           {phase === "loading-models" && (
             <p className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-4 py-2 text-white text-xs animate-pulse-soft whitespace-nowrap">
-              Menyiapkan kamera…
+              {t("Menyiapkan kamera…")}
             </p>
           )}
 
           {phase === "ready" && (
             <div className="absolute bottom-5 left-1/2 -translate-x-1/2">
               <button onClick={startStudio} onMouseEnter={sfx.hover} className="btn-primary whitespace-nowrap">
-                <CameraIcon className="h-4 w-4" /> Nyalakan kamera
+                <CameraIcon className="h-4 w-4" /> {t("Nyalakan kamera")}
               </button>
             </div>
           )}
@@ -360,7 +362,7 @@ export default function AvatarStudio() {
           {phase === "error" && (
             <div className="absolute inset-0 grid place-items-center p-8">
               <div className="text-center max-w-xs">
-                <p className="text-sm mb-5">{errorMsg}</p>
+                <p className="text-sm mb-5">{t(errorMsg)}</p>
                 <button
                   onClick={() => {
                     sfx.click();
@@ -369,7 +371,7 @@ export default function AvatarStudio() {
                   onMouseEnter={sfx.hover}
                   className="btn-secondary"
                 >
-                  Coba lagi
+                  {t("Coba lagi")}
                 </button>
               </div>
             </div>
@@ -382,7 +384,7 @@ export default function AvatarStudio() {
         <div className="surface rounded-2xl p-6 flex-1 lg:overflow-y-auto flex flex-col gap-6">
           <div>
             <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium mb-3">
-              Pilih karakter
+              {t("Pilih karakter")}
             </p>
             <div className="grid grid-cols-3 gap-2">
               {CHARACTERS.map((c) => {
@@ -395,7 +397,7 @@ export default function AvatarStudio() {
                       setCharacter(c);
                     }}
                     onMouseEnter={sfx.hover}
-                    aria-label={`Pilih karakter ${c.label}`}
+                    aria-label={`${t("Pilih karakter")} ${t(c.label)}`}
                     aria-pressed={active}
                     className={`flex flex-col items-center gap-1 rounded-xl py-2 transition-all duration-300 ${
                       active
@@ -405,7 +407,7 @@ export default function AvatarStudio() {
                   >
                     <AvatarThumbnail character={c} />
                     <span className={`text-[0.7rem] font-medium ${active ? "text-ink-950" : ""}`}>
-                      {c.label}
+                      {t(c.label)}
                     </span>
                   </button>
                 );
@@ -424,11 +426,11 @@ export default function AvatarStudio() {
                 className="flex-1 flex flex-col"
               >
                 <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium mb-3">
-                  Ekspresi terdeteksi
+                  {t("Ekspresi terdeteksi")}
                 </p>
                 <div className="grid gap-2.5">
                   {EMOTION_ORDER.map((key) => {
-                    const meta = emotionMeta(key);
+                    const meta = emotionMeta(key, locale);
                     const val = live ? live[key] || 0 : 0;
                     return (
                       <div key={key} className="flex items-center gap-3">
@@ -449,7 +451,7 @@ export default function AvatarStudio() {
                   className="btn-primary w-full mt-6"
                 >
                   <ImageDown className="h-3.5 w-3.5" strokeWidth={2.2} />
-                  Ambil gambar karakter
+                  {t("Ambil gambar karakter")}
                 </button>
               </motion.div>
             ) : (
@@ -463,7 +465,7 @@ export default function AvatarStudio() {
               >
                 <Sparkles className="h-4 w-4 text-accent shrink-0 mt-0.5" strokeWidth={2} />
                 <p className="text-[0.75rem] text-soft leading-relaxed">
-                  Pilih ekspresi di bawah untuk melihat gerak karakter, lalu nyalakan kamera untuk mengikuti wajahmu.
+                  {t("Pilih ekspresi di bawah untuk melihat gerak karakter, lalu nyalakan kamera untuk mengikuti wajahmu.")}
                 </p>
               </motion.div>
             )}
@@ -471,7 +473,7 @@ export default function AvatarStudio() {
           {phase !== "live" && (
             <div className="border-t hairline pt-4">
               <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium mb-3">
-                Coba ekspresi karakter
+                {t("Coba ekspresi karakter")}
               </p>
               <div className="grid grid-cols-4 gap-1.5">
                 {PREVIEW_EMOTIONS.map((key) => (
@@ -481,18 +483,18 @@ export default function AvatarStudio() {
                     aria-pressed={previewEmotion === key}
                     className={`rounded-lg px-1 py-2 text-[0.7rem] transition-colors ${previewEmotion === key ? "bg-grad-ember text-ink-950 font-semibold" : "surface-sunken hover:opacity-75"}`}
                   >
-                    {emotionMeta(key).label}
+                    {emotionMeta(key, locale).label}
                   </button>
                 ))}
               </div>
               <div className="flex gap-2 mt-2">
                 <button onClick={() => setPreviewWink((value) => !value)} aria-pressed={previewWink}
                   className={`rounded-lg px-3 py-2 text-xs ${previewWink ? "bg-grad-ember text-ink-950" : "surface-sunken"}`}>
-                  Kedip
+                  {t("Kedip")}
                 </button>
                 <button onClick={() => setPreviewTongue((value) => !value)} aria-pressed={previewTongue}
                   className={`rounded-lg px-3 py-2 text-xs ${previewTongue ? "bg-grad-ember text-ink-950" : "surface-sunken"}`}>
-                  Melet
+                  {t("Melet")}
                 </button>
               </div>
             </div>

@@ -6,6 +6,7 @@ import { Sparkles, ArrowUpRight, Images, Wand2 } from "lucide-react";
 import { emotionMeta } from "@/lib/emotions";
 import { sfx } from "@/lib/sfx";
 import MoodHeroArt from "@/components/MoodHeroArt";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -13,7 +14,8 @@ const fadeUp = {
 };
 
 function GalleryThumb({ photo, index }) {
-  const meta = emotionMeta(photo.emotion);
+  const { locale, t } = useLanguage();
+  const meta = emotionMeta(photo.emotion, locale);
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -22,7 +24,7 @@ function GalleryThumb({ photo, index }) {
       className="relative aspect-square rounded-xl overflow-hidden surface-interactive"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photo.image_data} alt={`Mood ${meta.label}`} className="h-full w-full object-cover" />
+            <img src={photo.image_data} alt={locale === "en" ? `${meta.label} mood photo` : `Foto mood ${meta.label}`} className="h-full w-full object-cover" />
       <span className="absolute bottom-1.5 left-1.5 text-base leading-none drop-shadow">
         {meta.emoji}
       </span>
@@ -31,6 +33,7 @@ function GalleryThumb({ photo, index }) {
 }
 
 export default function DashboardView({ photos }) {
+  const { t } = useLanguage();
   const hasPhotos = photos.length > 0;
 
   return (
@@ -44,20 +47,17 @@ export default function DashboardView({ photos }) {
         >
           <p className="text-[0.8rem] font-medium text-accent tracking-[0.14em] uppercase mb-4 flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5" strokeWidth={2.4} />
-            Deteksi ekspresi real-time
+            {t("Deteksi ekspresi real-time")}
           </p>
           <h1 className="font-display text-[2.3rem] sm:text-[2.9rem] leading-[1.1] mb-5 max-w-lg">
-            Kenali <span className="italic gradient-text">suasana hatimu</span>, satu tatapan
-            kamera.
+            {t("Kenali ")}<span className="italic gradient-text">{t("suasana hatimu")}</span>{t(", satu tatapan kamera.")}
           </h1>
           <p className="text-soft leading-relaxed max-w-md mb-8">
-            Emora membaca ekspresi wajahmu langsung lewat kamera, lalu menangkap
-            momennya lengkap dengan persentase mood ke Galeri — atau ubah wajahmu jadi
-            karakter animasi yang bergerak mengikuti ekspresimu secara langsung.
+            {t("Emora membaca ekspresi wajahmu langsung lewat kamera, lalu menangkap momennya lengkap dengan persentase mood ke Galeri Mood, atau ubah wajahmu jadi karakter animasi yang bergerak mengikuti ekspresimu secara langsung.")}
           </p>
           <div className="flex items-center gap-5 flex-wrap">
             <Link href="/scan" onMouseEnter={sfx.hover} onClick={sfx.click} className="btn-primary">
-              Scan mood sekarang
+              {t("Scan mood sekarang")}
             </Link>
             <Link
               href="/avatar"
@@ -65,7 +65,7 @@ export default function DashboardView({ photos }) {
               onClick={sfx.click}
               className="text-sm font-medium text-soft hover:text-inherit focus-ring rounded flex items-center gap-1 link-underline"
             >
-              Coba karakter avatar <ArrowUpRight className="h-3.5 w-3.5" />
+              {t("Coba karakter avatar")} <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         </motion.div>
@@ -89,9 +89,9 @@ export default function DashboardView({ photos }) {
             <Images className="h-5 w-5 text-ink-950" strokeWidth={2} />
           </div>
           <div>
-            <p className="font-display text-lg leading-tight">Scan Mood</p>
+            <p className="font-display text-lg leading-tight">{t("Scan Mood")}</p>
             <p className="text-soft text-sm mt-0.5">
-              Tangkap ekspresimu dan simpan ke Galeri Mood bersama.
+              {t("Tangkap ekspresimu dan simpan ke Galeri Mood bersama.")}
             </p>
           </div>
         </motion.div>
@@ -108,7 +108,7 @@ export default function DashboardView({ photos }) {
           <div>
             <p className="font-display text-lg leading-tight">Avatar</p>
             <p className="text-soft text-sm mt-0.5">
-              Gerakkan karakter rubah, kucing, hingga alien dengan wajahmu.
+              {t("Gerakkan karakter rubah, kucing, hingga alien dengan wajahmu.")}
             </p>
           </div>
         </motion.div>
@@ -116,14 +116,14 @@ export default function DashboardView({ photos }) {
 
       <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.16 }}>
         <div className="flex items-center justify-between mb-4">
-          <p className="font-display text-lg">Cuplikan Galeri Mood</p>
+          <p className="font-display text-lg">{t("Cuplikan Galeri Mood")}</p>
           <Link
             href="/gallery"
             onMouseEnter={sfx.hover}
             onClick={sfx.click}
             className="text-[0.8rem] text-soft hover:text-inherit focus-ring rounded link-underline"
           >
-            Lihat semua
+            {t("Lihat semua")}
           </Link>
         </div>
         {hasPhotos ? (
@@ -134,9 +134,9 @@ export default function DashboardView({ photos }) {
           </div>
         ) : (
           <div className="surface rounded-2xl p-10 text-center">
-            <p className="font-display text-xl mb-2">Belum ada foto</p>
+            <p className="font-display text-xl mb-2">{t("Belum ada foto")}</p>
             <p className="text-soft text-sm leading-relaxed">
-              Foto hasil scan mood pertama akan muncul di sini dan di Galeri Mood.
+              {t("Foto hasil scan mood pertama akan muncul di sini dan di Galeri Mood.")}
             </p>
           </div>
         )}

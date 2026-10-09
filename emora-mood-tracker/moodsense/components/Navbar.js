@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon, Sparkles } from "lucide-react";
 import { sfx } from "@/lib/sfx";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const LINKS = [
   { href: "/", label: "Beranda" },
@@ -15,6 +16,7 @@ const LINKS = [
 ];
 
 export default function Navbar() {
+  const { locale, t, changeLanguage } = useLanguage();
   const pathname = usePathname();
   const [theme, setTheme] = useState(null);
 
@@ -69,7 +71,7 @@ export default function Navbar() {
                     />
                   )}
                   <span className={active ? "relative" : "relative link-underline"}>
-                    {link.label}
+                    {t(link.label)}
                   </span>
                 </Link>
               );
@@ -84,12 +86,22 @@ export default function Navbar() {
               className="btn-primary hidden sm:inline-flex !py-2.5 !px-5 text-[0.875rem]"
             >
               <Sparkles className="h-3.5 w-3.5" strokeWidth={2.2} />
-              Scan sekarang
+              {t("Scan sekarang")}
             </Link>
+            <button
+              type="button"
+              onClick={() => { sfx.toggle(); changeLanguage(locale === "id" ? "en" : "id"); }}
+              onMouseEnter={sfx.hover}
+              aria-label={locale === "id" ? "Switch to English" : "Ganti ke Bahasa Indonesia"}
+              title={t("Bahasa")}
+              className="focus-ring rounded-full border hairline px-2.5 py-1.5 text-xs font-semibold text-soft hover:text-inherit"
+            >
+              {locale === "id" ? "EN" : "ID"}
+            </button>
             <button
               onClick={toggleTheme}
               onMouseEnter={sfx.hover}
-              aria-label="Ganti tema terang/gelap"
+              aria-label={t("Ganti tema terang/gelap")}
               className="btn-ghost-icon focus-ring h-9 w-9 border hairline"
             >
               <AnimatePresence mode="wait" initial={false}>
@@ -132,7 +144,7 @@ export default function Navbar() {
                     transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   />
                 )}
-                <span className="relative">{link.label}</span>
+                <span className="relative">{t(link.label)}</span>
               </Link>
             );
           })}

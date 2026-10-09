@@ -1,13 +1,16 @@
 import { sql, ensureSchema } from "@/lib/db";
 import GalleryView from "@/components/GalleryView";
 import SetupNotice from "@/components/SetupNotice";
+import { cookies } from "next/headers";
+import { createTranslator, normalizeLocale } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export const metadata = {
-  title: "Galeri Mood — Emora",
-};
+export function generateMetadata() {
+  const t = createTranslator(normalizeLocale(cookies().get("emora-locale")?.value));
+  return { title: t("Galeri Mood | Emora") };
+}
 
 async function getPhotos() {
   if (!process.env.DATABASE_URL) return { photos: null, error: "missing-env" };

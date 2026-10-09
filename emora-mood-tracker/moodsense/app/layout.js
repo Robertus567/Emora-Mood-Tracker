@@ -12,12 +12,17 @@ import "@fontsource/jetbrains-mono/600.css";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import SfxInit from "@/components/SfxInit";
+import { cookies } from "next/headers";
+import { LanguageProvider } from "@/components/LanguageProvider";
+import { normalizeLocale, translate } from "@/lib/i18n";
 
-export const metadata = {
-  title: "Emora — Pelacak Suasana Hati",
-  description:
-    "Nyalakan kamera, Emora mengenali ekspresi wajahmu, menghidupkan avatar karaktermu, dan menyimpan momennya ke Galeri Mood.",
-};
+export function generateMetadata() {
+  const locale = normalizeLocale(cookies().get("emora-locale")?.value);
+  return {
+    title: translate(locale, "Emora | Pelacak Suasana Hati"),
+    description: translate(locale, "Nyalakan kamera, Emora mengenali ekspresi wajahmu, menghidupkan avatar karaktermu, dan menyimpan momennya ke Galeri Mood."),
+  };
+}
 
 const themeInit = `
 (function () {
@@ -30,8 +35,9 @@ const themeInit = `
 `;
 
 export default function RootLayout({ children }) {
+  const locale = normalizeLocale(cookies().get("emora-locale")?.value);
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
@@ -60,9 +66,11 @@ export default function RootLayout({ children }) {
           }}
           aria-hidden="true"
         />
-        <SfxInit />
-        <Navbar />
-        <main>{children}</main>
+        <LanguageProvider initialLocale={locale}>
+          <SfxInit />
+          <Navbar />
+          <main>{children}</main>
+        </LanguageProvider>
       </body>
     </html>
   );

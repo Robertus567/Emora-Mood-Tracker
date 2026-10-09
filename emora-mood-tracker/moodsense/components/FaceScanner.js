@@ -7,6 +7,7 @@ import { Camera, CheckCircle2, RotateCcw, Upload, Images } from "lucide-react";
 import { EMOTION_ORDER, emotionMeta, dominantFromScores } from "@/lib/emotions";
 import { FILTERS, drawFilter } from "@/lib/faceFilters";
 import { sfx } from "@/lib/sfx";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const MODEL_URL = "/models";
 const TICK_MS = 120;
@@ -14,14 +15,15 @@ const UPLOAD_MAX_WIDTH = 640;
 const UPLOAD_QUALITY = 0.78;
 
 function ExpressionLegend() {
+  const { locale, t } = useLanguage();
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium">
-        Emora bisa mengenali
+        {t("Emora bisa mengenali")}
       </p>
       <div className="grid grid-cols-2 gap-2">
         {EMOTION_ORDER.map((key) => {
-          const meta = emotionMeta(key);
+          const meta = emotionMeta(key, locale);
           return (
             <div
               key={key}
@@ -49,6 +51,7 @@ function downscaleForUpload(sourceCanvas) {
 }
 
 export default function FaceScanner() {
+  const { locale, t } = useLanguage();
   const router = useRouter();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -120,7 +123,7 @@ export default function FaceScanner() {
     if (!detection) return;
     const box = detection.detection.box;
     const { emotion } = dominantFromScores(detection.expressions);
-    const color = emotionMeta(emotion).color;
+    const color = emotionMeta(emotion, locale).color;
 
     ctx.strokeStyle = color;
     ctx.lineWidth = 3;
@@ -325,7 +328,7 @@ export default function FaceScanner() {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={capturedPhoto}
-              alt="Hasil tangkapan"
+              alt={t("Hasil tangkapan")}
               className="absolute inset-0 h-full w-full object-cover"
             />
           )}
@@ -347,9 +350,9 @@ export default function FaceScanner() {
                       setFilter(f.id);
                     }}
                     onMouseEnter={sfx.hover}
-                    aria-label={f.label}
+                    aria-label={t(f.label)}
                     aria-pressed={filter === f.id}
-                    title={f.label}
+                    title={t(f.label)}
                     className={`h-8 w-8 grid place-items-center rounded-full text-base transition-all duration-300 ${
                       filter === f.id ? "bg-white/90 scale-105" : "hover:bg-white/15"
                     }`}
@@ -361,7 +364,7 @@ export default function FaceScanner() {
 
               {staleTicks > 4 && (
                 <div className="absolute top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-black/55 text-white text-[0.8rem] whitespace-nowrap">
-                  Posisikan wajahmu di tengah bingkai
+                  {t("Posisikan wajahmu di tengah bingkai")}
                 </div>
               )}
 
@@ -369,8 +372,8 @@ export default function FaceScanner() {
                 onClick={captureShutter}
                 onMouseEnter={sfx.hover}
                 disabled={!live}
-                aria-label="Tangkap mood"
-                title="Tangkap mood"
+                aria-label={t("Tangkap mood")}
+                title={t("Tangkap mood")}
                 className="absolute bottom-5 left-1/2 -translate-x-1/2 h-16 w-16 rounded-full bg-white/90 hover:bg-white ring-4 ring-white/30 active:scale-90 transition-transform duration-150 disabled:opacity-40 grid place-items-center"
               >
                 <span className="h-12 w-12 rounded-full border-2 border-ink-950/20" />
@@ -384,7 +387,7 @@ export default function FaceScanner() {
 
           {phase === "loading-models" && (
             <div className="absolute inset-0 grid place-items-center">
-              <p className="text-soft text-sm animate-pulse-soft">Menyiapkan model deteksi…</p>
+              <p className="text-soft text-sm animate-pulse-soft">{t("Menyiapkan model deteksi…")}</p>
             </div>
           )}
 
@@ -395,11 +398,10 @@ export default function FaceScanner() {
                   <Camera className="h-6 w-6 text-ink-950" strokeWidth={2} />
                 </div>
                 <p className="text-soft text-sm mb-5 max-w-xs mx-auto">
-                  Nyalakan kamera, posisikan wajahmu di tengah, lalu tekan tombol
-                  rana untuk menangkap momen dan mood-mu.
+                  {t("Nyalakan kamera, posisikan wajahmu di tengah, lalu tekan tombol rana untuk menangkap momen dan mood-mu.")}
                 </p>
                 <button onClick={() => { sfx.click(); startCamera(); }} onMouseEnter={sfx.hover} className="btn-primary">
-                  Mulai kamera
+                  {t("Mulai kamera")}
                 </button>
               </div>
             </div>
@@ -408,7 +410,7 @@ export default function FaceScanner() {
           {phase === "error" && (
             <div className="absolute inset-0 grid place-items-center p-8">
               <div className="text-center max-w-xs">
-                <p className="text-sm mb-5">{errorMsg}</p>
+                <p className="text-sm mb-5">{t(errorMsg)}</p>
                 <button
                   onClick={() => {
                     sfx.click();
@@ -417,7 +419,7 @@ export default function FaceScanner() {
                   onMouseEnter={sfx.hover}
                   className="btn-secondary"
                 >
-                  Coba lagi
+                  {t("Coba lagi")}
                 </button>
               </div>
             </div>
@@ -431,17 +433,17 @@ export default function FaceScanner() {
                 transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
                 className="text-center text-white px-8"
               >
-                <p className="text-4xl mb-3">{emotionMeta(result.emotion).emoji}</p>
-                <p className="font-display text-xl mb-1">Tersimpan ke Galeri Mood</p>
+                <p className="text-4xl mb-3">{emotionMeta(result.emotion, locale).emoji}</p>
+                <p className="font-display text-xl mb-1">{t("Tersimpan ke Galeri Mood")}</p>
                 <p className="text-white/75 text-sm mb-6">
-                  {emotionMeta(result.emotion).label} · baru saja
+                  {emotionMeta(result.emotion, locale).label} · {t("baru saja")}
                 </p>
                 <div className="flex items-center justify-center gap-3">
                   <button onClick={scanAgain} onMouseEnter={sfx.hover} className="btn-secondary !border-white/30 !text-white">
-                    Scan lagi
+                    {t("Scan lagi")}
                   </button>
                   <a href="/gallery" onMouseEnter={sfx.hover} onClick={sfx.click} className="btn-primary !text-ink-950">
-                    <Images className="h-3.5 w-3.5" strokeWidth={2.2} /> Lihat galeri
+                    <Images className="h-3.5 w-3.5" strokeWidth={2.2} /> {t("Lihat galeri")}
                   </a>
                 </div>
               </motion.div>
@@ -466,9 +468,7 @@ export default function FaceScanner() {
                 <ExpressionLegend />
                 <div className="rounded-xl surface-sunken px-4 py-3.5">
                   <p className="text-[0.78rem] text-soft leading-relaxed">
-                    Hasil scan-mu bisa kamu simpan ke Galeri Mood bersama — bisa dilihat
-                    dan diunduh siapa saja, dan bisa kamu hapus lagi kapan pun dari
-                    foto itu sendiri.
+                    {t("Hasil scan-mu bisa kamu simpan ke Galeri Mood bersama, bisa dilihat dan diunduh siapa saja, dan bisa kamu hapus lagi kapan pun dari foto itu sendiri.")}
                   </p>
                 </div>
               </motion.div>
@@ -485,7 +485,7 @@ export default function FaceScanner() {
               >
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium">
-                    Deteksi langsung
+                    {t("Deteksi langsung")}
                   </p>
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ember-500 opacity-60" />
@@ -493,12 +493,11 @@ export default function FaceScanner() {
                   </span>
                 </div>
                 <p className="text-[0.75rem] text-soft mb-5">
-                  Pilih filter seru di atas kamera, lalu tekan tombol rana besar untuk
-                  menangkap mood-mu.
+                  {t("Pilih filter seru di atas kamera, lalu tekan tombol rana besar untuk menangkap mood-mu.")}
                 </p>
                 <div className="grid gap-2.5 flex-1">
                   {EMOTION_ORDER.map((key) => {
-                    const meta = emotionMeta(key);
+                    const meta = emotionMeta(key, locale);
                     const val = live ? live[key] || 0 : 0;
                     return (
                       <div key={key} className="flex items-center gap-3">
@@ -529,23 +528,23 @@ export default function FaceScanner() {
                 className="flex-1 flex flex-col"
               >
                 <div className="flex items-start gap-4 mb-5">
-                  <span className="text-3xl">{emotionMeta(result.emotion).emoji}</span>
+                  <span className="text-3xl">{emotionMeta(result.emotion, locale).emoji}</span>
                   <div>
                     <p className="font-display text-xl leading-tight">
-                      {emotionMeta(result.emotion).label}
+                      {emotionMeta(result.emotion, locale).label}
                     </p>
                     <p className="text-soft text-sm mt-1">
-                      Kepercayaan deteksi {Math.round(result.confidence * 100)}%
+                      {t("Kepercayaan deteksi")} {Math.round(result.confidence * 100)}%
                     </p>
                   </div>
                 </div>
 
                 <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium mb-2.5">
-                  Rincian mood
+                  {t("Rincian mood")}
                 </p>
                 <div className="grid gap-2 mb-5">
                   {EMOTION_ORDER.map((key) => {
-                    const meta = emotionMeta(key);
+                    const meta = emotionMeta(key, locale);
                     const pct = Math.round((result.scores[key] || 0) * 100);
                     return (
                       <div key={key} className="flex items-center gap-3">
@@ -562,7 +561,7 @@ export default function FaceScanner() {
                   })}
                 </div>
 
-                {saveError && <p className="text-[0.8rem] text-mood-anger mb-3">{saveError}</p>}
+                {saveError && <p className="text-[0.8rem] text-mood-anger mb-3">{t(saveError)}</p>}
 
                 <div className="mt-auto flex items-center gap-3">
                   <button
@@ -572,10 +571,10 @@ export default function FaceScanner() {
                     className="btn-primary flex-1 disabled:opacity-60"
                   >
                     {saving ? (
-                      "Menyimpan…"
+                      t("Menyimpan…")
                     ) : (
                       <>
-                        <Upload className="h-3.5 w-3.5" strokeWidth={2.2} /> Simpan ke Galeri
+                        <Upload className="h-3.5 w-3.5" strokeWidth={2.2} /> {t("Simpan ke Galeri")}
                       </>
                     )}
                   </button>
@@ -584,8 +583,8 @@ export default function FaceScanner() {
                     onMouseEnter={sfx.hover}
                     className="btn-ghost-icon border hairline h-11 w-11 shrink-0"
                     disabled={saving}
-                    aria-label="Buang & scan ulang"
-                    title="Buang & scan ulang"
+                    aria-label={t("Buang & scan ulang")}
+                    title={t("Buang & scan ulang")}
                   >
                     <RotateCcw className="h-4 w-4" strokeWidth={2} />
                   </button>
@@ -603,9 +602,9 @@ export default function FaceScanner() {
                 className="flex-1 flex flex-col justify-center items-center text-center gap-3"
               >
                 <CheckCircle2 className="h-9 w-9 text-ember-500" strokeWidth={1.8} />
-                <p className="font-display text-lg">Tersimpan ke Galeri Mood</p>
+                <p className="font-display text-lg">{t("Tersimpan ke Galeri Mood")}</p>
                 <p className="text-soft text-sm">
-                  {emotionMeta(result.emotion).label} · bisa dilihat semua orang di Galeri.
+                  {emotionMeta(result.emotion, locale).label} · {t("bisa dilihat semua orang di Galeri.")}
                 </p>
               </motion.div>
             )}

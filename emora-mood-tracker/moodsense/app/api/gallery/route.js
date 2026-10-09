@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql, ensureSchema } from "@/lib/db";
+import { normalizeLocale, translate } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -15,6 +16,7 @@ const VALID_EMOTIONS = new Set([
 ]);
 
 export async function GET(req) {
+  const t = (text) => translate(normalizeLocale(req.cookies.get("emora-locale")?.value), text);
   try {
     await ensureSchema();
     const { searchParams } = new URL(req.url);
@@ -25,31 +27,32 @@ export async function GET(req) {
     `;
     return NextResponse.json({ photos: rows });
   } catch (err) {
-    return NextResponse.json({ error: err.message || "Gagal mengambil galeri." }, { status: 500 });
+    return NextResponse.json({ error: err.message || t("Gagal mengambil galeri.") }, { status: 500 });
   }
 }
 
 export async function POST(req) {
+  const t = (text) => translate(normalizeLocale(req.cookies.get("emora-locale")?.value), text);
   try {
     await ensureSchema();
     const body = await req.json();
     const { imageData, emotion, confidence, scores } = body || {};
 
     if (!VALID_EMOTIONS.has(emotion)) {
-      return NextResponse.json({ error: "Emosi tidak dikenali." }, { status: 400 });
+      return NextResponse.json({ error: t("Emosi tidak dikenali.") }, { status: 400 });
     }
     if (typeof confidence !== "number" || confidence < 0 || confidence > 1) {
-      return NextResponse.json({ error: "Nilai kepercayaan tidak valid." }, { status: 400 });
+      return NextResponse.json({ error: t("Nilai kepercayaan tidak valid.") }, { status: 400 });
     }
     if (!scores || typeof scores !== "object") {
-      return NextResponse.json({ error: "Data skor ekspresi hilang." }, { status: 400 });
+      return NextResponse.json({ error: t("Data skor ekspresi hilang.") }, { status: 400 });
     }
     if (typeof imageData !== "string" || !imageData.startsWith("data:image/")) {
-      return NextResponse.json({ error: "Data gambar tidak valid." }, { status: 400 });
+      return NextResponse.json({ error: t("Data gambar tidak valid.") }, { status: 400 });
     }
     // ~2.5MB decoded ceiling so nobody can balloon the database with huge uploads.
     if (imageData.length > 3_400_000) {
-      return NextResponse.json({ error: "Ukuran gambar terlalu besar." }, { status: 400 });
+      return NextResponse.json({ error: t("Ukuran gambar terlalu besar.") }, { status: 400 });
     }
 
     const [row] = await sql`
@@ -59,6 +62,6 @@ export async function POST(req) {
     `;
     return NextResponse.json({ photo: row }, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: err.message || "Gagal menyimpan ke galeri." }, { status: 500 });
+    return NextResponse.json({ error: err.message || t("Gagal menyimpan ke galeri.") }, { status: 500 });
   }
 }

@@ -2,6 +2,8 @@
 // across the app: label, color, emoji, and the short affirmations shown
 // right after a scan. Colors reference the `mood` palette in tailwind.config.js.
 
+import { translate } from "@/lib/i18n";
+
 export const EMOTION_ORDER = [
   "happy",
   "neutral",
@@ -20,7 +22,7 @@ export const EMOTIONS = {
     var: "mood-joy",
     quotes: [
       "Simpan rasa ini. Kamu berhak merasa sebaik ini.",
-      "Senyum tadi jujur — bagus untuk diingat lagi nanti.",
+      "Senyum tadi jujur, bagus untuk diingat lagi nanti.",
       "Energi baik begini layak dirayakan, sekecil apa pun sebabnya.",
     ],
   },
@@ -30,7 +32,7 @@ export const EMOTIONS = {
     color: "#7A88A6",
     var: "mood-calm",
     quotes: [
-      "Tenang itu bukan kosong — ini titik seimbang yang sehat.",
+      "Tenang itu bukan kosong. Ini titik seimbang yang sehat.",
       "Tidak semua hari harus ramai. Hari datar juga valid.",
       "Stabil begini adalah fondasi yang baik untuk besok.",
     ],
@@ -83,13 +85,21 @@ export const EMOTIONS = {
     color: "#4F8763",
     var: "mood-disgust",
     quotes: [
-      "Reaksi ini biasanya sinyal — ada sesuatu yang tidak sesuai denganmu.",
+      "Reaksi ini biasanya sinyal bahwa ada sesuatu yang tidak sesuai denganmu.",
     ],
   },
 };
 
-export function emotionMeta(key) {
-  return EMOTIONS[key] || EMOTIONS.neutral;
+const EN_EMOTIONS = Object.fromEntries(
+  Object.entries(EMOTIONS).map(([key, meta]) => [
+    key,
+    { ...meta, label: translate("en", meta.label), quotes: meta.quotes.map((quote) => translate("en", quote)) },
+  ])
+);
+
+export function emotionMeta(key, locale = "id") {
+  const source = locale === "en" ? EN_EMOTIONS : EMOTIONS;
+  return source[key] || source.neutral;
 }
 
 // Given a face-api.js expressions object { happy: 0.1, sad: 0.8, ... }

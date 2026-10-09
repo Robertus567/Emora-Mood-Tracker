@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const CHIPS = [
   { emoji: "😄", label: "Senang", radius: 148, duration: 22, start: 0, size: "top" },
@@ -9,6 +10,7 @@ const CHIPS = [
 ];
 
 function OrbitChip({ chip }) {
+  const { t } = useLanguage();
   return (
     <motion.div
       className="absolute inset-0"
@@ -31,7 +33,7 @@ function OrbitChip({ chip }) {
           >
             <span className="text-base leading-none">{chip.emoji}</span>
             <span className="text-[0.68rem] font-medium text-soft whitespace-nowrap">
-              {chip.label}
+              {t(chip.label)}
             </span>
           </motion.div>
         </motion.div>
