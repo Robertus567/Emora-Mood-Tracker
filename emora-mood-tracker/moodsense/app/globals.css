@@ -46,8 +46,7 @@ body {
   position: relative;
 }
 
-/* Subtle film-grain texture over the whole app — kills the "flat AI template"
-   look without costing any real performance (single fixed layer). */
+/* Subtle grain texture over the app using a single fixed layer. */
 body::before {
   content: "";
   position: fixed;
@@ -97,15 +96,8 @@ main {
 }
 
 .font-display {
-  font-feature-settings: "ss01" 1, "liga" 1;
-  letter-spacing: -0.01em;
-}
-
-.gradient-text {
-  background-image: linear-gradient(120deg, rgb(var(--text)) 30%, rgb(var(--accent)) 70%, #D1568F 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
+  font-weight: 600;
+  letter-spacing: -0.035em;
 }
 
 .surface {
@@ -279,7 +271,7 @@ main {
 }
 
 .num-mono {
-  font-family: theme("fontFamily.mono");
+  font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }

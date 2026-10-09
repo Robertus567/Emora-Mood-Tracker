@@ -8,9 +8,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        display: ["Fraunces", "serif"],
+        display: ["Inter", "sans-serif"],
         sans: ["Inter", "sans-serif"],
-        mono: ["'JetBrains Mono'", "monospace"],
       },
       colors: {
         ink: {

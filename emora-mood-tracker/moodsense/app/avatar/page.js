@@ -13,7 +13,7 @@ export default function AvatarPage() {
       <div className="mb-6 shrink-0 flex items-end justify-between gap-4 flex-wrap">
         <div className="max-w-lg">
           <h1 className="font-display text-[1.7rem] sm:text-[2rem] leading-[1.15] mb-2">
-            {t("Jadikan wajahmu ")}<span className="italic gradient-text">{t("karakter hidup")}</span>.
+            {t("Jadikan wajahmu ")}<span className="text-accent">{t("karakter hidup")}</span>.
           </h1>
           <p className="text-soft text-sm leading-relaxed">
             {t("Mata, alis, mulut, dan kemiringan kepalamu digerakkan langsung ke karakter pilihanmu, lengkap dengan ekspresi senang, sedih, marah, takut, jijik, dan terkejut.")}

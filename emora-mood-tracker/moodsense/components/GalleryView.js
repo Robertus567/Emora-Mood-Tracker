@@ -215,11 +215,11 @@ export default function GalleryView({ photos: initialPhotos }) {
   return (
     <div className="mx-auto max-w-6xl px-5 sm:px-8 py-14 sm:py-16">
       <div className="mb-10 max-w-lg">
-        <p className="text-[0.8rem] font-medium text-accent tracking-[0.14em] uppercase mb-3">
+        <p className="text-[0.8rem] font-medium text-accent tracking-[0.06em] uppercase mb-3">
           {t("Galeri bersama")}
         </p>
         <h1 className="font-display text-[1.9rem] sm:text-[2.2rem] leading-[1.15] mb-3">
-          {t("Galeri ")}<span className="italic gradient-text">{t("mood")}</span>.
+          {t("Galeri ")}<span className="text-accent">{t("mood")}</span>.
         </h1>
         <p className="text-soft leading-relaxed">
           {t("Setiap foto di sini diambil langsung dari kamera pengunjung saat scan mood, lengkap dengan persentase ekspresinya. Bisa diunduh siapa saja, dan pemiliknya bisa menghapusnya kapan pun lewat tombol di tiap foto.")}

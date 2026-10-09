@@ -45,7 +45,7 @@ export default function Navbar() {
             onClick={sfx.click}
             className="flex items-center gap-1.5 focus-ring group"
           >
-            <span className="font-display italic text-[1.6rem] leading-none gradient-text">
+            <span className="font-display text-[1.5rem] leading-none text-accent">
               Emora
             </span>
           </Link>

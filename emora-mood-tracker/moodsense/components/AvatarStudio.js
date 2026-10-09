@@ -383,7 +383,7 @@ export default function AvatarStudio() {
       <div className="lg:flex-1 lg:max-w-sm flex flex-col min-h-0">
         <div className="surface rounded-2xl p-6 flex-1 lg:overflow-y-auto flex flex-col gap-6">
           <div>
-            <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium mb-3">
+            <p className="text-[0.75rem] text-soft uppercase tracking-[0.06em] font-medium mb-3">
               {t("Pilih karakter")}
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -425,7 +425,7 @@ export default function AvatarStudio() {
                 transition={{ duration: 0.25 }}
                 className="flex-1 flex flex-col"
               >
-                <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium mb-3">
+                <p className="text-[0.75rem] text-soft uppercase tracking-[0.06em] font-medium mb-3">
                   {t("Ekspresi terdeteksi")}
                 </p>
                 <div className="grid gap-2.5">
@@ -472,7 +472,7 @@ export default function AvatarStudio() {
           </AnimatePresence>
           {phase !== "live" && (
             <div className="border-t hairline pt-4">
-              <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium mb-3">
+              <p className="text-[0.75rem] text-soft uppercase tracking-[0.06em] font-medium mb-3">
                 {t("Coba ekspresi karakter")}
               </p>
               <div className="grid grid-cols-4 gap-1.5">

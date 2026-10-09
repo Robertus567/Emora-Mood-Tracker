@@ -18,7 +18,7 @@ function ExpressionLegend() {
   const { locale, t } = useLanguage();
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium">
+      <p className="text-[0.75rem] text-soft uppercase tracking-[0.06em] font-medium">
         {t("Emora bisa mengenali")}
       </p>
       <div className="grid grid-cols-2 gap-2">
@@ -484,7 +484,7 @@ export default function FaceScanner() {
                 className="flex-1 flex flex-col"
               >
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium">
+                  <p className="text-[0.75rem] text-soft uppercase tracking-[0.06em] font-medium">
                     {t("Deteksi langsung")}
                   </p>
                   <span className="relative flex h-2 w-2">
@@ -539,7 +539,7 @@ export default function FaceScanner() {
                   </div>
                 </div>
 
-                <p className="text-[0.75rem] text-soft uppercase tracking-[0.12em] font-medium mb-2.5">
+                <p className="text-[0.75rem] text-soft uppercase tracking-[0.06em] font-medium mb-2.5">
                   {t("Rincian mood")}
                 </p>
                 <div className="grid gap-2 mb-5">

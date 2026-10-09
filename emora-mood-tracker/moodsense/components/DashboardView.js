@@ -45,12 +45,12 @@ export default function DashboardView({ photos }) {
           animate="show"
           className="flex flex-col justify-center"
         >
-          <p className="text-[0.8rem] font-medium text-accent tracking-[0.14em] uppercase mb-4 flex items-center gap-1.5">
+          <p className="text-[0.8rem] font-medium text-accent tracking-[0.06em] uppercase mb-4 flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5" strokeWidth={2.4} />
             {t("Deteksi ekspresi real-time")}
           </p>
           <h1 className="font-display text-[2.3rem] sm:text-[2.9rem] leading-[1.1] mb-5 max-w-lg">
-            {t("Kenali ")}<span className="italic gradient-text">{t("suasana hatimu")}</span>{t(", satu tatapan kamera.")}
+            {t("Kenali ")}<span className="text-accent">{t("suasana hatimu")}</span>{t(", satu tatapan kamera.")}
           </h1>
           <p className="text-soft leading-relaxed max-w-md mb-8">
             {t("Emora membaca ekspresi wajahmu langsung lewat kamera, lalu menangkap momennya lengkap dengan persentase mood ke Galeri Mood, atau ubah wajahmu jadi karakter animasi yang bergerak mengikuti ekspresimu secara langsung.")}

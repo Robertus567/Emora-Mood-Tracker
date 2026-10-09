@@ -20,7 +20,7 @@ export default function SetupNotice({ reason }) {
   return (
     <div className="mx-auto max-w-6xl px-5 sm:px-8 py-24">
       <div className="max-w-md surface rounded-2xl p-8">
-        <p className="text-[0.8rem] text-accent tracking-wide uppercase font-medium mb-3">
+        <p className="text-[0.8rem] text-accent tracking-[0.06em] uppercase font-medium mb-3">
           {t("Pengaturan")}
         </p>
         <h1 className="font-display text-2xl mb-3">{t(copy.title)}</h1>
